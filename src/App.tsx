@@ -52,7 +52,7 @@ export default function App() {
       setProfiles(pData as Profile[]);
       supabase.auth.getSession().then(({ data: { session: s } }) => {
         if (s?.user) {
-          const matched = (pData as Profile[]).find(p => p.id === s.user.id);
+          const matched = (pData as Profile[]).find(p => p.email === s.user.email);
           if (matched) {
             setSession({ user: { id: matched.id, email: matched.email, role: matched.role } });
             setCurrentPath(matched.role === 'admin' ? '/admin/dashboard' : '/siswa/dashboard');
@@ -106,17 +106,26 @@ export default function App() {
     setErrorMessage('');
 
     if (!emailInput) {
-      setErrorMessage('Harap isi alamat email Anda!');
+      setErrorMessage('Harap isi Email atau NIS Anda!');
       return;
     }
 
+    // 1. Cek apakah ini login siswa (via NIS & Password dari tabel profiles)
+    const siswaMatch = profiles.find(p => p.nis === emailInput && p.role === 'siswa' && p.password === passwordInput);
+    if (siswaMatch) {
+      setSession({ user: { id: siswaMatch.id, email: siswaMatch.email, role: 'siswa' } });
+      setCurrentPath('/siswa/dashboard');
+      return;
+    }
+
+    // 2. Jika tidak cocok sebagai siswa, coba sebagai Admin via Supabase Auth
     const { error } = await supabase.auth.signInWithPassword({
       email: emailInput,
       password: passwordInput,
     });
 
     if (error) {
-      setErrorMessage(error.message);
+      setErrorMessage('Kredensial tidak valid!');
     }
     // On success, auth state listener → fetchSupabaseData → session setup
   };
@@ -137,8 +146,16 @@ export default function App() {
   };
 
   const handleLogout = async () => {
-    await supabase.auth.signOut();
-    // Auth state listener will clear session & redirect
+    if (session?.user?.role === 'admin') {
+      await supabase.auth.signOut();
+      // Auth state listener will clear session & redirect
+    } else {
+      // Manual logout for siswa
+      setSession({ user: null });
+      setCurrentPath('/login');
+      setEmailInput('');
+      setPasswordInput('');
+    }
   };
 
   // Reset demo states to fresh database
@@ -249,14 +266,14 @@ export default function App() {
 
                   {/* Email Input */}
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-600 block">Alamat Email Terdaftar</label>
+                    <label className="text-xs font-bold text-slate-600 block">Alamat Email / NIS</label>
                     <div className="relative">
                       <Mail className="w-4 h-4 text-slate-400 absolute left-3 top-3.5" />
                       <input
-                        type="email"
+                        type="text"
                         value={emailInput}
                         onChange={(e) => setEmailInput(e.target.value)}
-                        placeholder="nama@babussalam.sch.id"
+                        placeholder="Email (Admin) atau NIS (Siswa)"
                         className="w-full bg-white border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 rounded-lg py-2.5 pl-10 pr-4 text-xs font-medium"
                         required
                         id="login-email-field"

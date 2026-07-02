@@ -95,22 +95,28 @@ export default function AdminDashboard({
         triggerToast(`NIS ${studentForm.nis} sudah digunakan siswa lain!`, 'error');
         return;
       }
+      
       const newSiswaId = crypto.randomUUID();
-      const newProfile = { id: newSiswaId, role: 'siswa', ...studentForm };
+      const generatedPassword = `Siswa${studentForm.nis}`; // Generate password from NIS
+      
+      const newProfile = { id: newSiswaId, role: 'siswa', password: generatedPassword, ...studentForm };
       const newSppRecords = BULAN_LIST.map((bulan) => ({
         siswa_id: newSiswaId, tahun_ajaran: '2025/2026',
         bulan: bulan, nominal: NOMINAL_SPP, status: 'belum_bayar'
       }));
       
       const { error: pError } = await supabase.from('profiles').insert([newProfile]);
-      if (pError) { triggerToast('Gagal menambah siswa', 'error'); return; }
+      if (pError) { triggerToast('Gagal menambah siswa ke profiles', 'error'); return; }
       
       const { error: sError } = await supabase.from('spp_pembayaran').insert(newSppRecords);
       if (sError) { triggerToast('Gagal membuat tagihan SPP', 'error'); return; }
 
-      onOpenSQL(); // refresh
+      onOpenSQL(); // refresh data
       setSelectedSiswaId(newSiswaId);
       triggerToast('Siswa baru berhasil ditambahkan!');
+      
+      // Tampilkan kredensial kepada Admin
+      alert(`AKUN SISWA BERHASIL DIBUAT!\n\nNIS/Username: ${studentForm.nis}\nPassword: ${generatedPassword}\n\nHarap simpan atau berikan informasi ini kepada siswa yang bersangkutan.`);
     }
     setIsStudentModalOpen(false);
   };

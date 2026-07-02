@@ -1,4 +1,4 @@
--- Hapus tabel lama jika ada
+-- Hapus tabel lama jika ada (HATI-HATI JIKA SUDAH ADA DATA PENTING)
 DROP TABLE IF EXISTS public.spp_pembayaran CASCADE;
 DROP TABLE IF EXISTS public.profiles CASCADE;
 DROP TYPE IF EXISTS user_role CASCADE;
@@ -15,7 +15,8 @@ CREATE TABLE public.profiles (
   nis TEXT,
   kelas TEXT,
   role user_role NOT NULL DEFAULT 'siswa',
-  email TEXT NOT NULL
+  email TEXT NOT NULL,
+  password TEXT -- Kolom baru untuk sistem login hibrida siswa
 );
 
 -- Buat tabel spp_pembayaran

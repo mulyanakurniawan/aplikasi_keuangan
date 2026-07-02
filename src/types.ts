@@ -7,6 +7,7 @@ export interface Profile {
   kelas: string;
   role: UserRole;
   email: string;
+  password?: string;
 }
 
 export interface SppPembayaran {
