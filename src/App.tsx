@@ -48,7 +48,18 @@ export default function App() {
   const fetchSupabaseData = async () => {
     setIsLoading(true);
     const { data: pData } = await supabase.from('profiles').select('*');
-    if (pData) setProfiles(pData as Profile[]);
+    if (pData) {
+      setProfiles(pData as Profile[]);
+      supabase.auth.getSession().then(({ data: { session: s } }) => {
+        if (s?.user) {
+          const matched = (pData as Profile[]).find(p => p.id === s.user.id);
+          if (matched) {
+            setSession({ user: { id: matched.id, email: matched.email, role: matched.role } });
+            setCurrentPath(matched.role === 'admin' ? '/admin/dashboard' : '/siswa/dashboard');
+          }
+        }
+      });
+    }
     
     const { data: payData } = await supabase.from('spp_pembayaran').select('*');
     if (payData) setPayments(payData as SppPembayaran[]);
@@ -56,7 +67,29 @@ export default function App() {
   };
 
   useEffect(() => {
-    fetchSupabaseData();
+    supabase.auth.getSession().then(({ data: { session: supabaseSession } }) => {
+      if (supabaseSession) {
+        fetchSupabaseData();
+      } else {
+        setIsLoading(false);
+      }
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, supabaseSession) => {
+      if (event === 'SIGNED_IN') {
+        fetchSupabaseData();
+      } else if (event === 'SIGNED_OUT') {
+        setProfiles([]);
+        setPayments([]);
+        setSession({ user: null });
+        setCurrentPath('/login');
+        setEmailInput('');
+        setPasswordInput('');
+        setIsLoading(false);
+      }
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   useEffect(() => {
@@ -68,7 +101,7 @@ export default function App() {
   }, [currentPath]);
 
   // LOGIN VALIDATOR
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
 
@@ -77,62 +110,35 @@ export default function App() {
       return;
     }
 
-    // Find profile by email
-    const matchedProfile = profiles.find(
-      p => p.email.toLowerCase().trim() === emailInput.toLowerCase().trim()
-    );
+    const { error } = await supabase.auth.signInWithPassword({
+      email: emailInput,
+      password: passwordInput,
+    });
 
-    if (matchedProfile) {
-      // In production with Supabase Auth, password would be verified.
-      // For this robust simulation, any password works, mapping session from profile role
-      const newSession: UserSession = {
-        user: {
-          id: matchedProfile.id,
-          email: matchedProfile.email,
-          role: matchedProfile.role
-        }
-      };
-      setSession(newSession);
-
-      // Route based on role
-      if (matchedProfile.role === 'admin') {
-        setCurrentPath('/admin/dashboard');
-      } else {
-        setCurrentPath('/siswa/dashboard');
-      }
-    } else {
-      setErrorMessage('Alamat email tidak terdaftar di sistem SPP SMA Plus Babussalam!');
+    if (error) {
+      setErrorMessage(error.message);
     }
+    // On success, auth state listener → fetchSupabaseData → session setup
   };
 
   // Preset quick login helpers for easy assessment
-  const handleQuickLogin = (email: string) => {
+  const handleQuickLogin = async (email: string) => {
     setEmailInput(email);
     setPasswordInput('password123');
-    
-    const matchedProfile = profiles.find(p => p.email === email);
-    if (matchedProfile) {
-      const newSession: UserSession = {
-        user: {
-          id: matchedProfile.id,
-          email: matchedProfile.email,
-          role: matchedProfile.role
-        }
-      };
-      setSession(newSession);
-      if (matchedProfile.role === 'admin') {
-        setCurrentPath('/admin/dashboard');
-      } else {
-        setCurrentPath('/siswa/dashboard');
-      }
+
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password: 'password123',
+    });
+
+    if (error) {
+      setErrorMessage(error.message);
     }
   };
 
-  const handleLogout = () => {
-    setSession({ user: null });
-    setCurrentPath('/login');
-    setEmailInput('');
-    setPasswordInput('');
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    // Auth state listener will clear session & redirect
   };
 
   // Reset demo states to fresh database
