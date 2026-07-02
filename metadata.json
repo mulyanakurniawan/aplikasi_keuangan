@@ -1,0 +1,6 @@
+{
+  "name": "SPP Babussalam",
+  "description": "Sistem Informasi Pembayaran SPP SMA Plus Babussalam dengan dashboard admin, manajemen siswa, entri pembayaran, dan laporan ekspor PDF/Excel.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
