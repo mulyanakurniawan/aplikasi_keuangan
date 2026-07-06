@@ -617,59 +617,58 @@ Wassalamu'alaikum Wr. Wb.`
             )}
 
             {activeTab === 'broadcast' && (
-              <div className="space-y-6">
+              <div className="space-y-4 flex-1 flex flex-col min-h-0 lg:h-[calc(100vh-140px)]">
                 {/* Header Stats Bar */}
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                  <div className="bg-gradient-to-br from-rose-500 to-pink-600 rounded-xl p-5 text-white shadow-sm flex items-center justify-between">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 shrink-0">
+                  <div className="bg-gradient-to-br from-rose-500 to-pink-600 rounded-xl p-3.5 text-white shadow-sm flex items-center justify-between">
                     <div>
-                      <span className="text-white/80 text-xs font-semibold uppercase tracking-wider block">Siswa Menunggak</span>
-                      <h4 className="text-2xl font-bold mt-1">{getStudentsInArrears().length} Orang</h4>
+                      <span className="text-white/80 text-[10px] font-semibold uppercase tracking-wider block">Siswa Menunggak</span>
+                      <h4 className="text-lg font-bold mt-0.5">{getStudentsInArrears().length} Orang</h4>
                     </div>
-                    <AlertTriangle className="w-10 h-10 text-white/20 shrink-0" />
+                    <AlertTriangle className="w-8 h-8 text-white/20 shrink-0" />
                   </div>
                   
-                  <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl p-5 text-white shadow-sm flex items-center justify-between">
+                  <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl p-3.5 text-white shadow-sm flex items-center justify-between">
                     <div>
-                      <span className="text-white/80 text-xs font-semibold uppercase tracking-wider block">Total Outstanding</span>
-                      <h4 className="text-2xl font-bold mt-1">{formatRupiah(getStudentsInArrears().reduce((sum, item) => sum + (item.arrears.length * NOMINAL_SPP), 0))}</h4>
+                      <span className="text-white/80 text-[10px] font-semibold uppercase tracking-wider block">Total Outstanding</span>
+                      <h4 className="text-lg font-bold mt-0.5">{formatRupiah(getStudentsInArrears().reduce((sum, item) => sum + (item.arrears.length * NOMINAL_SPP), 0))}</h4>
                     </div>
-                    <Wallet className="w-10 h-10 text-white/20 shrink-0" />
+                    <Wallet className="w-8 h-8 text-white/20 shrink-0" />
                   </div>
 
-                  <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-5 text-white shadow-sm flex items-center justify-between">
+                  <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-3.5 text-white shadow-sm flex items-center justify-between">
                     <div>
-                      <span className="text-white/80 text-xs font-semibold uppercase tracking-wider block">Sudah Dihubungi</span>
-                      <h4 className="text-2xl font-bold mt-1">{getStudentsInArrears().filter(item => contactedSiswaIds.includes(item.siswa.id)).length} / {getStudentsInArrears().length}</h4>
+                      <span className="text-white/80 text-[10px] font-semibold uppercase tracking-wider block">Sudah Dihubungi</span>
+                      <h4 className="text-lg font-bold mt-0.5">{getStudentsInArrears().filter(item => contactedSiswaIds.includes(item.siswa.id)).length} / {getStudentsInArrears().length}</h4>
                     </div>
-                    <Check className="w-10 h-10 text-white/20 shrink-0" />
+                    <Check className="w-8 h-8 text-white/20 shrink-0" />
                   </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch flex-1 min-h-0">
                   
                   {/* LEFT PANEL: TEMPLATE CUSTOMIZER & LIVE WHATSAPP PREVIEW */}
-                  <div className="lg:col-span-5 space-y-6">
+                  <div className="lg:col-span-5 flex flex-col gap-4 h-full min-h-0">
                     {/* Template Customizer Card */}
-                    <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+                    <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col flex-1 min-h-0">
                       <div>
-                        <h4 className="text-sm font-bold text-slate-800">Template Pesan WhatsApp</h4>
-                        <p className="text-xs text-slate-500 mt-0.5">Kustomisasi isi pesan untuk wali murid.</p>
+                        <h4 className="text-xs font-bold text-slate-800">Template Pesan WhatsApp</h4>
+                        <p className="text-[10px] text-slate-500">Kustomisasi isi pesan untuk wali murid.</p>
                       </div>
                       
-                      <div className="space-y-2">
+                      <div className="mt-2.5 flex-1 min-h-0 flex flex-col">
                         <textarea
-                          rows={6}
                           value={broadcastTemplate}
                           onChange={(e) => setBroadcastTemplate(e.target.value)}
                           placeholder="Tulis template pesan..."
-                          className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-sans leading-relaxed"
+                          className="w-full flex-1 min-h-0 bg-slate-50 border border-slate-200 rounded-lg p-2.5 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-sans leading-relaxed resize-none"
                         />
                       </div>
 
                       {/* Variables Tags list */}
-                      <div className="space-y-1.5">
-                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Klik untuk menyisipkan variabel:</span>
-                        <div className="flex flex-wrap gap-1.5">
+                      <div className="mt-2.5 space-y-1">
+                        <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Klik untuk menyisipkan variabel:</span>
+                        <div className="flex flex-wrap gap-1">
                           {[
                             { tag: '{nama_siswa}', label: 'Nama Siswa' },
                             { tag: '{kelas}', label: 'Kelas' },
@@ -682,7 +681,7 @@ Wassalamu'alaikum Wr. Wb.`
                               onClick={() => {
                                 setBroadcastTemplate(prev => prev + v.tag);
                               }}
-                              className="text-[10px] bg-slate-100 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 text-slate-700 hover:text-emerald-700 font-semibold py-1 px-2 rounded-md transition cursor-pointer"
+                              className="text-[9px] bg-slate-100 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 text-slate-700 hover:text-emerald-700 font-semibold py-0.5 px-1.5 rounded transition cursor-pointer"
                             >
                               {v.label}
                             </button>
@@ -692,10 +691,10 @@ Wassalamu'alaikum Wr. Wb.`
                     </div>
 
                     {/* Live WhatsApp Mockup Preview */}
-                    <div className="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800">
+                    <div className="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 flex flex-col h-[200px] shrink-0">
                       {/* WhatsApp Header */}
-                      <div className="bg-[#075e54] text-white p-3 flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-full bg-[#128c7e] flex items-center justify-center font-bold text-xs select-none">
+                      <div className="bg-[#075e54] text-white p-2 flex items-center gap-2 shrink-0">
+                        <div className="w-6.5 h-6.5 rounded-full bg-[#128c7e] flex items-center justify-center font-bold text-[10px] select-none shrink-0">
                           {(() => {
                             const studentsInArrears = getStudentsInArrears();
                             const currentPreviewItem = studentsInArrears.find(item => item.siswa.id === selectedSiswaPreviewId) || studentsInArrears[0];
@@ -703,29 +702,29 @@ Wassalamu'alaikum Wr. Wb.`
                           })()}
                         </div>
                         <div>
-                          <h5 className="text-xs font-bold">
+                          <h5 className="text-[10px] font-bold leading-tight">
                             {(() => {
                               const studentsInArrears = getStudentsInArrears();
                               const currentPreviewItem = studentsInArrears.find(item => item.siswa.id === selectedSiswaPreviewId) || studentsInArrears[0];
                               return currentPreviewItem ? currentPreviewItem.siswa.nama : 'Penerima';
                             })()}
                           </h5>
-                          <span className="text-[9px] text-[#25d366] font-semibold block">Wali Murid • Online</span>
+                          <span className="text-[8px] text-[#25d366] font-semibold block leading-none">Wali Murid • Online</span>
                         </div>
                       </div>
 
                       {/* Chat Background & Bubble */}
-                      <div className="p-4 bg-[#efeae2] min-h-60 relative flex flex-col justify-end">
+                      <div className="p-2.5 bg-[#efeae2] flex-1 min-h-0 overflow-y-auto relative flex flex-col justify-end">
                         {(() => {
                           const studentsInArrears = getStudentsInArrears();
                           const currentPreviewItem = studentsInArrears.find(item => item.siswa.id === selectedSiswaPreviewId) || studentsInArrears[0];
                           if (currentPreviewItem) {
                             return (
-                              <div className="bg-[#d9fdd3] text-slate-800 text-xs p-3 rounded-lg max-w-[85%] self-end shadow-sm relative border border-[#e1f7de]">
+                              <div className="bg-[#d9fdd3] text-slate-800 text-[10px] p-2 rounded-lg max-w-[85%] self-end shadow-sm relative border border-[#e1f7de]">
                                 <div className="whitespace-pre-wrap font-sans leading-relaxed">
                                   {generateBroadcastText(currentPreviewItem.siswa, currentPreviewItem.arrears.length)}
                                 </div>
-                                <span className="text-[9px] text-slate-400 font-medium float-right mt-1 flex items-center gap-1 select-none">
+                                <span className="text-[7px] text-slate-400 font-medium float-right mt-0.5 flex items-center gap-0.5 select-none">
                                   {new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
                                   <span className="text-blue-500 font-bold">✓✓</span>
                                 </span>
@@ -733,7 +732,7 @@ Wassalamu'alaikum Wr. Wb.`
                             );
                           }
                           return (
-                            <div className="bg-white/85 backdrop-blur-sm text-slate-500 text-center py-6 px-4 rounded-lg text-xs font-medium border border-slate-200/50">
+                            <div className="bg-white/85 backdrop-blur-sm text-slate-500 text-center py-4 px-3 rounded-lg text-[9px] font-medium border border-slate-200/50">
                               Belum ada data siswa menunggak.
                             </div>
                           );
@@ -743,17 +742,17 @@ Wassalamu'alaikum Wr. Wb.`
                   </div>
 
                   {/* RIGHT PANEL: STUDENT ARREARS LIST */}
-                  <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                  <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full min-h-0">
                     {/* Panel Header & Filter bar */}
-                    <div className="p-5 border-b border-slate-100 space-y-3 bg-slate-50/50">
+                    <div className="p-4 border-b border-slate-100 space-y-2.5 bg-slate-50/50 shrink-0">
                       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
                         <div>
-                          <h4 className="text-sm font-bold text-slate-800">Daftar Tunggakan Siswa</h4>
-                          <p className="text-xs text-slate-500">Pilih baris untuk melihat pratinjau atau kirim tagihan.</p>
+                          <h4 className="text-xs font-bold text-slate-800">Daftar Tunggakan Siswa</h4>
+                          <p className="text-[10px] text-slate-500">Pilih baris untuk melihat pratinjau atau kirim tagihan.</p>
                         </div>
                         
                         {/* Summary of listed */}
-                        <span className="text-xs bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full font-bold self-start sm:self-auto">
+                        <span className="text-[10px] bg-slate-200 text-slate-700 px-2 py-0.5 rounded-full font-bold self-start sm:self-auto">
                           {(() => {
                             const studentsInArrears = getStudentsInArrears();
                             const filtered = studentsInArrears.filter(({ siswa }) => {
@@ -771,13 +770,13 @@ Wassalamu'alaikum Wr. Wb.`
                       <div className="flex flex-col sm:flex-row gap-2">
                         {/* Search Input */}
                         <div className="relative flex-1">
-                          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                          <Search className="w-3 h-3 text-slate-400 absolute left-2.5 top-2" />
                           <input
                             type="text"
                             value={broadcastSearch}
                             onChange={(e) => setBroadcastSearch(e.target.value)}
                             placeholder="Cari siswa atau NIS..."
-                            className="w-full bg-white border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 rounded-lg py-2 pl-9 pr-4 text-xs font-medium"
+                            className="w-full bg-white border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 rounded-lg py-1.5 pl-8 pr-3 text-[10px] font-medium"
                           />
                         </div>
 
@@ -785,7 +784,7 @@ Wassalamu'alaikum Wr. Wb.`
                         <select
                           value={broadcastKelas}
                           onChange={(e) => setBroadcastKelas(e.target.value)}
-                          className="bg-white border border-slate-200 rounded-lg py-2 px-3 text-xs font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                          className="bg-white border border-slate-200 rounded-lg py-1.5 px-2 text-[10px] font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
                         >
                           {classesList.map(kelas => (
                             <option key={kelas} value={kelas}>{kelas === 'Semua' ? 'Semua Kelas' : `Kelas ${kelas}`}</option>
@@ -795,7 +794,7 @@ Wassalamu'alaikum Wr. Wb.`
                     </div>
 
                     {/* Table / List Container */}
-                    <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto scrollbar-thin">
+                    <div className="divide-y divide-slate-100 flex-1 min-h-0 overflow-y-auto scrollbar-thin">
                       {(() => {
                         const studentsInArrears = getStudentsInArrears();
                         const filtered = studentsInArrears.filter(({ siswa }) => {
@@ -834,28 +833,28 @@ Wassalamu'alaikum Wr. Wb.`
                             <div
                               key={siswa.id}
                               onClick={() => setSelectedSiswaPreviewId(siswa.id)}
-                              className={`p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition cursor-pointer hover:bg-slate-50/80 ${isSelected ? 'bg-emerald-50/40 border-l-4 border-emerald-600 pl-3' : ''}`}
+                              className={`p-3.5 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition cursor-pointer hover:bg-slate-50/80 ${isSelected ? 'bg-emerald-50/40 border-l-4 border-emerald-600 pl-2.5' : ''}`}
                             >
                               <div className="flex items-center gap-3">
                                 {/* Checkbox for contacted */}
                                 <button
                                   type="button"
                                   onClick={handleToggleContactedClick}
-                                  className={`w-5 h-5 rounded border flex items-center justify-center transition shrink-0 cursor-pointer ${isContacted ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 hover:border-emerald-500 bg-white'}`}
+                                  className={`w-4 h-4 rounded border flex items-center justify-center transition shrink-0 cursor-pointer ${isContacted ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 hover:border-emerald-500 bg-white'}`}
                                 >
-                                  {isContacted && <Check className="w-3.5 h-3.5" />}
+                                  {isContacted && <Check className="w-3 h-3" />}
                                 </button>
 
                                 <div>
-                                  <h5 className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                  <h5 className="font-bold text-[11px] text-slate-800 flex items-center gap-1.5">
                                     {siswa.nama}
                                     {isContacted && (
-                                      <span className="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-emerald-200">
+                                      <span className="bg-emerald-100 text-emerald-800 text-[8px] font-bold px-1.5 py-0.5 rounded-full border border-emerald-200 leading-none">
                                         Sudah Hubungi
                                       </span>
                                     )}
                                   </h5>
-                                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                  <p className="text-[9px] text-slate-400 font-medium mt-0.5">
                                     NIS: {siswa.nis} • Kelas: {siswa.kelas}
                                   </p>
                                 </div>
@@ -863,10 +862,10 @@ Wassalamu'alaikum Wr. Wb.`
 
                               <div className="flex sm:flex-col items-end gap-2 sm:gap-1 shrink-0 w-full sm:w-auto justify-between sm:justify-start">
                                 <div className="text-right">
-                                  <span className="bg-rose-50 text-rose-700 text-[10px] font-extrabold px-2 py-0.5 rounded border border-rose-100 block sm:inline-block">
+                                  <span className="bg-rose-50 text-rose-700 text-[9px] font-extrabold px-1.5 py-0.5 rounded border border-rose-100 block sm:inline-block">
                                     {arrears.length} Bulan
                                   </span>
-                                  <span className="text-xs font-extrabold text-slate-900 block mt-0.5">
+                                  <span className="text-[11px] font-extrabold text-slate-900 block mt-0.5">
                                     {formatRupiah(arrears.length * NOMINAL_SPP)}
                                   </span>
                                 </div>
@@ -875,17 +874,17 @@ Wassalamu'alaikum Wr. Wb.`
                                   <button
                                     type="button"
                                     onClick={handleCopy}
-                                    className="p-1.5 text-slate-400 hover:text-slate-600 bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-md transition cursor-pointer"
+                                    className="p-1 text-slate-400 hover:text-slate-600 bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded transition cursor-pointer"
                                     title="Salin Teks Pesan"
                                   >
-                                    <Copy className="w-3.5 h-3.5" />
+                                    <Copy className="w-3 h-3" />
                                   </button>
                                   <button
                                     type="button"
                                     onClick={handleWA}
-                                    className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] rounded-md transition shadow-sm cursor-pointer"
+                                    className="flex items-center gap-1 px-2 py-1 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[9px] rounded transition shadow-sm cursor-pointer"
                                   >
-                                    <MessageCircle className="w-3.5 h-3.5" />
+                                    <MessageCircle className="w-3 h-3" />
                                     <span>Kirim</span>
                                   </button>
                                 </div>
@@ -906,7 +905,7 @@ Wassalamu'alaikum Wr. Wb.`
 
                         if (filtered.length === 0) {
                           return (
-                            <div className="p-12 text-center text-slate-500 text-xs">
+                            <div className="p-12 text-center text-slate-500 text-[10px]">
                               {studentsInArrears.length === 0 
                                 ? "Alhamdulillah, tidak ada siswa yang memiliki tunggakan saat ini!" 
                                 : "Tidak ada siswa yang cocok dengan kriteria pencarian."}
