@@ -36,6 +36,35 @@ export default function AdminDashboard({
   const [filterKelas, setFilterKelas] = useState('Semua');
   const [currentSelectedBulan, setCurrentSelectedBulan] = useState<BulanType>('Juni');
 
+  // Broadcast States
+  const [broadcastSearch, setBroadcastSearch] = useState('');
+  const [broadcastKelas, setBroadcastKelas] = useState('Semua');
+  const [broadcastTemplate, setBroadcastTemplate] = useState(
+    `Assalamu'alaikum Wr. Wb.
+
+Yth. Bapak/Ibu Wali Murid dari ananda *{nama_siswa}* (Kelas {kelas}).
+
+Bersama pesan ini kami menginformasikan bahwa ananda tercatat memiliki tunggakan SPP sebanyak *{jumlah_bulan} bulan*. Total tagihan: *{total_tagihan}*.
+
+Mohon kerjasamanya untuk segera melakukan pelunasan ke bagian Tata Usaha SMA Plus Babussalam.
+
+Atas perhatiannya kami ucapkan terima kasih.
+Wassalamu'alaikum Wr. Wb.`
+  );
+  const [selectedSiswaPreviewId, setSelectedSiswaPreviewId] = useState<string>('');
+  const [contactedSiswaIds, setContactedSiswaIds] = useState<string[]>(() => {
+    const saved = localStorage.getItem('spp_broadcast_contacted');
+    return saved ? JSON.parse(saved) : [];
+  });
+
+  const toggleContacted = (siswaId: string) => {
+    const updated = contactedSiswaIds.includes(siswaId)
+      ? contactedSiswaIds.filter(id => id !== siswaId)
+      : [...contactedSiswaIds, siswaId];
+    setContactedSiswaIds(updated);
+    localStorage.setItem('spp_broadcast_contacted', JSON.stringify(updated));
+  };
+
   const [selectedSiswaId, setSelectedSiswaId] = useState<string>(
     profiles.filter(p => p.role === 'siswa')[0]?.id || ''
   );
@@ -204,16 +233,11 @@ export default function AdminDashboard({
   };
 
   const generateBroadcastText = (siswa: Profile, arrearsCount: number) => {
-    return `Assalamu'alaikum Wr. Wb.
-
-Yth. Bapak/Ibu Wali Murid dari ananda *${siswa.nama}* (Kelas ${siswa.kelas}).
-
-Bersama pesan ini kami menginformasikan bahwa ananda tercatat memiliki tunggakan SPP sebanyak *${arrearsCount} bulan*. Total tagihan: *${formatRupiah(arrearsCount * NOMINAL_SPP)}*.
-
-Mohon kerjasamanya untuk segera melakukan pelunasan ke bagian Tata Usaha SMA Plus Babussalam.
-
-Atas perhatiannya kami ucapkan terima kasih.
-Wassalamu'alaikum Wr. Wb.`;
+    return broadcastTemplate
+      .replace(/{nama_siswa}/g, siswa.nama)
+      .replace(/{kelas}/g, siswa.kelas)
+      .replace(/{jumlah_bulan}/g, String(arrearsCount))
+      .replace(/{total_tagihan}/g, formatRupiah(arrearsCount * NOMINAL_SPP));
   };
 
   const handleExportExcel = () => {
@@ -593,46 +617,307 @@ Wassalamu'alaikum Wr. Wb.`;
             )}
 
             {activeTab === 'broadcast' && (
-              <div className="bg-white rounded-xl border border-slate-200 p-6 shadow-sm space-y-6">
-                <div className="border-b pb-3">
-                  <h3 className="font-bold text-sm">Generator Broadcast Tagihan (WhatsApp)</h3>
-                  <p className="text-xs text-slate-500 mt-1">Buat pesan otomatis untuk wali murid yang masih memiliki tunggakan.</p>
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {getStudentsInArrears().map(({ siswa, arrears }) => {
-                    const text = generateBroadcastText(siswa, arrears.length);
-                    const handleCopy = () => {
-                      navigator.clipboard.writeText(text);
-                      triggerToast('Teks disalin ke clipboard!');
-                    };
-                    const handleWA = () => {
-                      window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
-                    };
-                    return (
-                      <motion.div layout initial={{opacity:0, scale:0.95}} animate={{opacity:1, scale:1}} key={siswa.id} className="border border-slate-200 rounded-lg p-4 space-y-3 bg-slate-50/50 hover:shadow-md transition">
-                        <div className="flex justify-between items-center">
-                          <span className="font-bold text-xs">{siswa.nama}</span>
-                          <span className="text-[10px] bg-rose-100 text-rose-700 px-2 py-0.5 rounded font-bold">{arrears.length} Bulan Belum Dibayar</span>
-                        </div>
-                        <div className="text-[10px] bg-white border border-slate-200 p-2 rounded whitespace-pre-wrap text-slate-600 h-32 overflow-y-auto">
-                          {text}
-                        </div>
-                        <div className="flex gap-2">
-                          <button onClick={handleCopy} className="flex-1 bg-white border border-slate-200 hover:bg-slate-50 text-slate-700 py-1.5 rounded text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer transition">
-                            <Copy className="w-3 h-3" /> Salin Teks
-                          </button>
-                          <button onClick={handleWA} className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-1.5 rounded text-[10px] font-bold flex items-center justify-center gap-1 cursor-pointer transition">
-                            <MessageCircle className="w-3 h-3" /> Kirim WhatsApp
-                          </button>
-                        </div>
-                      </motion.div>
-                    );
-                  })}
-                  {getStudentsInArrears().length === 0 && (
-                    <div className="col-span-full p-8 text-center text-slate-500 text-xs">
-                      Alhamdulillah, tidak ada siswa yang memiliki tunggakan saat ini!
+              <div className="space-y-6">
+                {/* Header Stats Bar */}
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  <div className="bg-gradient-to-br from-rose-500 to-pink-600 rounded-xl p-5 text-white shadow-sm flex items-center justify-between">
+                    <div>
+                      <span className="text-white/80 text-xs font-semibold uppercase tracking-wider block">Siswa Menunggak</span>
+                      <h4 className="text-2xl font-bold mt-1">{getStudentsInArrears().length} Orang</h4>
                     </div>
-                  )}
+                    <AlertTriangle className="w-10 h-10 text-white/20 shrink-0" />
+                  </div>
+                  
+                  <div className="bg-gradient-to-br from-amber-500 to-orange-600 rounded-xl p-5 text-white shadow-sm flex items-center justify-between">
+                    <div>
+                      <span className="text-white/80 text-xs font-semibold uppercase tracking-wider block">Total Outstanding</span>
+                      <h4 className="text-2xl font-bold mt-1">{formatRupiah(getStudentsInArrears().reduce((sum, item) => sum + (item.arrears.length * NOMINAL_SPP), 0))}</h4>
+                    </div>
+                    <Wallet className="w-10 h-10 text-white/20 shrink-0" />
+                  </div>
+
+                  <div className="bg-gradient-to-br from-emerald-500 to-teal-600 rounded-xl p-5 text-white shadow-sm flex items-center justify-between">
+                    <div>
+                      <span className="text-white/80 text-xs font-semibold uppercase tracking-wider block">Sudah Dihubungi</span>
+                      <h4 className="text-2xl font-bold mt-1">{getStudentsInArrears().filter(item => contactedSiswaIds.includes(item.siswa.id)).length} / {getStudentsInArrears().length}</h4>
+                    </div>
+                    <Check className="w-10 h-10 text-white/20 shrink-0" />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+                  
+                  {/* LEFT PANEL: TEMPLATE CUSTOMIZER & LIVE WHATSAPP PREVIEW */}
+                  <div className="lg:col-span-5 space-y-6">
+                    {/* Template Customizer Card */}
+                    <div className="bg-white rounded-xl border border-slate-200 p-5 shadow-sm space-y-4">
+                      <div>
+                        <h4 className="text-sm font-bold text-slate-800">Template Pesan WhatsApp</h4>
+                        <p className="text-xs text-slate-500 mt-0.5">Kustomisasi isi pesan untuk wali murid.</p>
+                      </div>
+                      
+                      <div className="space-y-2">
+                        <textarea
+                          rows={6}
+                          value={broadcastTemplate}
+                          onChange={(e) => setBroadcastTemplate(e.target.value)}
+                          placeholder="Tulis template pesan..."
+                          className="w-full bg-slate-50 border border-slate-200 rounded-lg p-3 text-xs font-medium focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500 font-sans leading-relaxed"
+                        />
+                      </div>
+
+                      {/* Variables Tags list */}
+                      <div className="space-y-1.5">
+                        <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider block">Klik untuk menyisipkan variabel:</span>
+                        <div className="flex flex-wrap gap-1.5">
+                          {[
+                            { tag: '{nama_siswa}', label: 'Nama Siswa' },
+                            { tag: '{kelas}', label: 'Kelas' },
+                            { tag: '{jumlah_bulan}', label: 'Jumlah Bulan' },
+                            { tag: '{total_tagihan}', label: 'Total Tagihan' }
+                          ].map(v => (
+                            <button
+                              key={v.tag}
+                              type="button"
+                              onClick={() => {
+                                setBroadcastTemplate(prev => prev + v.tag);
+                              }}
+                              className="text-[10px] bg-slate-100 hover:bg-emerald-50 border border-slate-200 hover:border-emerald-200 text-slate-700 hover:text-emerald-700 font-semibold py-1 px-2 rounded-md transition cursor-pointer"
+                            >
+                              {v.label}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Live WhatsApp Mockup Preview */}
+                    <div className="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800">
+                      {/* WhatsApp Header */}
+                      <div className="bg-[#075e54] text-white p-3 flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-full bg-[#128c7e] flex items-center justify-center font-bold text-xs select-none">
+                          {(() => {
+                            const studentsInArrears = getStudentsInArrears();
+                            const currentPreviewItem = studentsInArrears.find(item => item.siswa.id === selectedSiswaPreviewId) || studentsInArrears[0];
+                            return currentPreviewItem ? currentPreviewItem.siswa.nama.charAt(0) : 'W';
+                          })()}
+                        </div>
+                        <div>
+                          <h5 className="text-xs font-bold">
+                            {(() => {
+                              const studentsInArrears = getStudentsInArrears();
+                              const currentPreviewItem = studentsInArrears.find(item => item.siswa.id === selectedSiswaPreviewId) || studentsInArrears[0];
+                              return currentPreviewItem ? currentPreviewItem.siswa.nama : 'Penerima';
+                            })()}
+                          </h5>
+                          <span className="text-[9px] text-[#25d366] font-semibold block">Wali Murid • Online</span>
+                        </div>
+                      </div>
+
+                      {/* Chat Background & Bubble */}
+                      <div className="p-4 bg-[#efeae2] min-h-60 relative flex flex-col justify-end">
+                        {(() => {
+                          const studentsInArrears = getStudentsInArrears();
+                          const currentPreviewItem = studentsInArrears.find(item => item.siswa.id === selectedSiswaPreviewId) || studentsInArrears[0];
+                          if (currentPreviewItem) {
+                            return (
+                              <div className="bg-[#d9fdd3] text-slate-800 text-xs p-3 rounded-lg max-w-[85%] self-end shadow-sm relative border border-[#e1f7de]">
+                                <div className="whitespace-pre-wrap font-sans leading-relaxed">
+                                  {generateBroadcastText(currentPreviewItem.siswa, currentPreviewItem.arrears.length)}
+                                </div>
+                                <span className="text-[9px] text-slate-400 font-medium float-right mt-1 flex items-center gap-1 select-none">
+                                  {new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
+                                  <span className="text-blue-500 font-bold">✓✓</span>
+                                </span>
+                              </div>
+                            );
+                          }
+                          return (
+                            <div className="bg-white/85 backdrop-blur-sm text-slate-500 text-center py-6 px-4 rounded-lg text-xs font-medium border border-slate-200/50">
+                              Belum ada data siswa menunggak.
+                            </div>
+                          );
+                        })()}
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* RIGHT PANEL: STUDENT ARREARS LIST */}
+                  <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+                    {/* Panel Header & Filter bar */}
+                    <div className="p-5 border-b border-slate-100 space-y-3 bg-slate-50/50">
+                      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                        <div>
+                          <h4 className="text-sm font-bold text-slate-800">Daftar Tunggakan Siswa</h4>
+                          <p className="text-xs text-slate-500">Pilih baris untuk melihat pratinjau atau kirim tagihan.</p>
+                        </div>
+                        
+                        {/* Summary of listed */}
+                        <span className="text-xs bg-slate-200 text-slate-700 px-2.5 py-1 rounded-full font-bold self-start sm:self-auto">
+                          {(() => {
+                            const studentsInArrears = getStudentsInArrears();
+                            const filtered = studentsInArrears.filter(({ siswa }) => {
+                              const matchesSearch = siswa.nama.toLowerCase().includes(broadcastSearch.toLowerCase()) || 
+                                                    siswa.nis.includes(broadcastSearch);
+                              const matchesKelas = broadcastKelas === 'Semua' || siswa.kelas === broadcastKelas;
+                              return matchesSearch && matchesKelas;
+                            });
+                            return filtered.length;
+                          })()} Terfilter
+                        </span>
+                      </div>
+
+                      {/* Filters */}
+                      <div className="flex flex-col sm:flex-row gap-2">
+                        {/* Search Input */}
+                        <div className="relative flex-1">
+                          <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                          <input
+                            type="text"
+                            value={broadcastSearch}
+                            onChange={(e) => setBroadcastSearch(e.target.value)}
+                            placeholder="Cari siswa atau NIS..."
+                            className="w-full bg-white border border-slate-200 focus:outline-none focus:ring-1 focus:ring-emerald-500 focus:border-emerald-500 rounded-lg py-2 pl-9 pr-4 text-xs font-medium"
+                          />
+                        </div>
+
+                        {/* Class Dropdown */}
+                        <select
+                          value={broadcastKelas}
+                          onChange={(e) => setBroadcastKelas(e.target.value)}
+                          className="bg-white border border-slate-200 rounded-lg py-2 px-3 text-xs font-medium text-slate-700 focus:outline-none focus:ring-1 focus:ring-emerald-500 cursor-pointer"
+                        >
+                          {classesList.map(kelas => (
+                            <option key={kelas} value={kelas}>{kelas === 'Semua' ? 'Semua Kelas' : `Kelas ${kelas}`}</option>
+                          ))}
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Table / List Container */}
+                    <div className="divide-y divide-slate-100 max-h-[500px] overflow-y-auto scrollbar-thin">
+                      {(() => {
+                        const studentsInArrears = getStudentsInArrears();
+                        const filtered = studentsInArrears.filter(({ siswa }) => {
+                          const matchesSearch = siswa.nama.toLowerCase().includes(broadcastSearch.toLowerCase()) || 
+                                                siswa.nis.includes(broadcastSearch);
+                          const matchesKelas = broadcastKelas === 'Semua' || siswa.kelas === broadcastKelas;
+                          return matchesSearch && matchesKelas;
+                        });
+
+                        return filtered.map(({ siswa, arrears }) => {
+                          const isSelected = selectedSiswaPreviewId === siswa.id || (!selectedSiswaPreviewId && studentsInArrears[0]?.siswa.id === siswa.id);
+                          const isContacted = contactedSiswaIds.includes(siswa.id);
+                          const text = generateBroadcastText(siswa, arrears.length);
+                          
+                          const handleCopy = (e: React.MouseEvent) => {
+                            e.stopPropagation(); // Prevent select row
+                            navigator.clipboard.writeText(text);
+                            triggerToast(`Teks tagihan ${siswa.nama} berhasil disalin!`);
+                          };
+
+                          const handleWA = (e: React.MouseEvent) => {
+                            e.stopPropagation(); // Prevent select row
+                            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                            // Mark as contacted automatically when sending via WA
+                            if (!isContacted) {
+                              toggleContacted(siswa.id);
+                            }
+                          };
+
+                          const handleToggleContactedClick = (e: React.MouseEvent) => {
+                            e.stopPropagation(); // Prevent select row
+                            toggleContacted(siswa.id);
+                          };
+
+                          return (
+                            <div
+                              key={siswa.id}
+                              onClick={() => setSelectedSiswaPreviewId(siswa.id)}
+                              className={`p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 transition cursor-pointer hover:bg-slate-50/80 ${isSelected ? 'bg-emerald-50/40 border-l-4 border-emerald-600 pl-3' : ''}`}
+                            >
+                              <div className="flex items-center gap-3">
+                                {/* Checkbox for contacted */}
+                                <button
+                                  type="button"
+                                  onClick={handleToggleContactedClick}
+                                  className={`w-5 h-5 rounded border flex items-center justify-center transition shrink-0 cursor-pointer ${isContacted ? 'bg-emerald-600 border-emerald-600 text-white' : 'border-slate-300 hover:border-emerald-500 bg-white'}`}
+                                >
+                                  {isContacted && <Check className="w-3.5 h-3.5" />}
+                                </button>
+
+                                <div>
+                                  <h5 className="font-bold text-xs text-slate-800 flex items-center gap-1.5">
+                                    {siswa.nama}
+                                    {isContacted && (
+                                      <span className="bg-emerald-100 text-emerald-800 text-[9px] font-bold px-1.5 py-0.5 rounded-full border border-emerald-200">
+                                        Sudah Hubungi
+                                      </span>
+                                    )}
+                                  </h5>
+                                  <p className="text-[10px] text-slate-400 font-medium mt-0.5">
+                                    NIS: {siswa.nis} • Kelas: {siswa.kelas}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="flex sm:flex-col items-end gap-2 sm:gap-1 shrink-0 w-full sm:w-auto justify-between sm:justify-start">
+                                <div className="text-right">
+                                  <span className="bg-rose-50 text-rose-700 text-[10px] font-extrabold px-2 py-0.5 rounded border border-rose-100 block sm:inline-block">
+                                    {arrears.length} Bulan
+                                  </span>
+                                  <span className="text-xs font-extrabold text-slate-900 block mt-0.5">
+                                    {formatRupiah(arrears.length * NOMINAL_SPP)}
+                                  </span>
+                                </div>
+
+                                <div className="flex gap-1">
+                                  <button
+                                    type="button"
+                                    onClick={handleCopy}
+                                    className="p-1.5 text-slate-400 hover:text-slate-600 bg-slate-50 border border-slate-200 hover:bg-slate-100 rounded-md transition cursor-pointer"
+                                    title="Salin Teks Pesan"
+                                  >
+                                    <Copy className="w-3.5 h-3.5" />
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={handleWA}
+                                    className="flex items-center gap-1 px-2.5 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] rounded-md transition shadow-sm cursor-pointer"
+                                  >
+                                    <MessageCircle className="w-3.5 h-3.5" />
+                                    <span>Kirim</span>
+                                  </button>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        });
+                      })()}
+
+                      {(() => {
+                        const studentsInArrears = getStudentsInArrears();
+                        const filtered = studentsInArrears.filter(({ siswa }) => {
+                          const matchesSearch = siswa.nama.toLowerCase().includes(broadcastSearch.toLowerCase()) || 
+                                                siswa.nis.includes(broadcastSearch);
+                          const matchesKelas = broadcastKelas === 'Semua' || siswa.kelas === broadcastKelas;
+                          return matchesSearch && matchesKelas;
+                        });
+
+                        if (filtered.length === 0) {
+                          return (
+                            <div className="p-12 text-center text-slate-500 text-xs">
+                              {studentsInArrears.length === 0 
+                                ? "Alhamdulillah, tidak ada siswa yang memiliki tunggakan saat ini!" 
+                                : "Tidak ada siswa yang cocok dengan kriteria pencarian."}
+                            </div>
+                          );
+                        }
+                        return null;
+                      })()}
+                    </div>
+                  </div>
+                  
                 </div>
               </div>
             )}

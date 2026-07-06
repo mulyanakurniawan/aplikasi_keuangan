@@ -29,7 +29,10 @@ async function seed() {
 
   console.log('Inserting profiles...');
   const profilesToInsert = INITIAL_PROFILES.map(p => {
-    const uuid = crypto.randomUUID();
+    let uuid = crypto.randomUUID();
+    if (p.email === 'admin@babussalam.sch.id') {
+      uuid = '7c7c1bdd-6ba2-4aab-8ad4-6dc4b3a24927';
+    }
     idMap.set(p.id, uuid);
     return {
       id: uuid,
@@ -37,7 +40,8 @@ async function seed() {
       nis: p.nis,
       kelas: p.kelas,
       role: p.role,
-      email: p.email
+      email: p.email,
+      password: p.role === 'siswa' ? 'password123' : null
     };
   });
 

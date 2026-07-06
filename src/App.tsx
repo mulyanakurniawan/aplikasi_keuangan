@@ -67,13 +67,24 @@ export default function App() {
   };
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session: supabaseSession } }) => {
+    const initSession = async () => {
+      const { data: { session: supabaseSession } } = await supabase.auth.getSession();
       if (supabaseSession) {
-        fetchSupabaseData();
+        await fetchSupabaseData();
+      } else if (session.user && session.user.role === 'siswa') {
+        // Load data for persistent student session
+        await fetchSupabaseData();
       } else {
+        // If admin session is stored in localStorage but auth session expired, clear it
+        if (session.user?.role === 'admin') {
+          setSession({ user: null });
+          setCurrentPath('/login');
+        }
         setIsLoading(false);
       }
-    });
+    };
+
+    initSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, supabaseSession) => {
       if (event === 'SIGNED_IN') {
@@ -100,7 +111,6 @@ export default function App() {
     localStorage.setItem('spp_path', currentPath);
   }, [currentPath]);
 
-  // LOGIN VALIDATOR
   const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMessage('');
@@ -110,11 +120,20 @@ export default function App() {
       return;
     }
 
-    // 1. Cek apakah ini login siswa (via NIS & Password dari tabel profiles)
-    const siswaMatch = profiles.find(p => p.nis === emailInput && p.role === 'siswa' && p.password === passwordInput);
-    if (siswaMatch) {
-      setSession({ user: { id: siswaMatch.id, email: siswaMatch.email, role: 'siswa' } });
+    // 1. Cek apakah ini login siswa (via NIS & Password dari tabel profiles di Supabase)
+    const { data: profileData } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('nis', emailInput)
+      .eq('role', 'siswa')
+      .eq('password', passwordInput)
+      .maybeSingle();
+
+    if (profileData) {
+      setSession({ user: { id: profileData.id, email: profileData.email, role: 'siswa' } });
       setCurrentPath('/siswa/dashboard');
+      // Fetch all payments/profiles data for student view
+      await fetchSupabaseData();
       return;
     }
 
