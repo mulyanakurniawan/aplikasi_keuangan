@@ -647,10 +647,10 @@ Wassalamu'alaikum Wr. Wb.`
 
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-4 items-stretch flex-1 min-h-0">
                   
-                  {/* LEFT PANEL: TEMPLATE CUSTOMIZER & LIVE WHATSAPP PREVIEW */}
-                  <div className="lg:col-span-5 flex flex-col gap-4 h-full min-h-0">
+                  {/* LEFT PANEL: TEMPLATE CUSTOMIZER */}
+                  <div className="lg:col-span-4 h-full min-h-0">
                     {/* Template Customizer Card */}
-                    <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col flex-1 min-h-0">
+                    <div className="bg-white rounded-xl border border-slate-200 p-4 shadow-sm flex flex-col h-full min-h-0">
                       <div>
                         <h4 className="text-xs font-bold text-slate-800">Template Pesan WhatsApp</h4>
                         <p className="text-[10px] text-slate-500">Kustomisasi isi pesan untuk wali murid.</p>
@@ -666,7 +666,7 @@ Wassalamu'alaikum Wr. Wb.`
                       </div>
 
                       {/* Variables Tags list */}
-                      <div className="mt-2.5 space-y-1">
+                      <div className="mt-2.5 space-y-1.5 shrink-0">
                         <span className="text-[9px] font-bold text-slate-500 uppercase tracking-wider block">Klik untuk menyisipkan variabel:</span>
                         <div className="flex flex-wrap gap-1">
                           {[
@@ -689,60 +689,10 @@ Wassalamu'alaikum Wr. Wb.`
                         </div>
                       </div>
                     </div>
-
-                    {/* Live WhatsApp Mockup Preview */}
-                    <div className="bg-slate-900 rounded-xl overflow-hidden shadow-lg border border-slate-800 flex flex-col h-[200px] shrink-0">
-                      {/* WhatsApp Header */}
-                      <div className="bg-[#075e54] text-white p-2 flex items-center gap-2 shrink-0">
-                        <div className="w-6.5 h-6.5 rounded-full bg-[#128c7e] flex items-center justify-center font-bold text-[10px] select-none shrink-0">
-                          {(() => {
-                            const studentsInArrears = getStudentsInArrears();
-                            const currentPreviewItem = studentsInArrears.find(item => item.siswa.id === selectedSiswaPreviewId) || studentsInArrears[0];
-                            return currentPreviewItem ? currentPreviewItem.siswa.nama.charAt(0) : 'W';
-                          })()}
-                        </div>
-                        <div>
-                          <h5 className="text-[10px] font-bold leading-tight">
-                            {(() => {
-                              const studentsInArrears = getStudentsInArrears();
-                              const currentPreviewItem = studentsInArrears.find(item => item.siswa.id === selectedSiswaPreviewId) || studentsInArrears[0];
-                              return currentPreviewItem ? currentPreviewItem.siswa.nama : 'Penerima';
-                            })()}
-                          </h5>
-                          <span className="text-[8px] text-[#25d366] font-semibold block leading-none">Wali Murid • Online</span>
-                        </div>
-                      </div>
-
-                      {/* Chat Background & Bubble */}
-                      <div className="p-2.5 bg-[#efeae2] flex-1 min-h-0 overflow-y-auto relative flex flex-col justify-end">
-                        {(() => {
-                          const studentsInArrears = getStudentsInArrears();
-                          const currentPreviewItem = studentsInArrears.find(item => item.siswa.id === selectedSiswaPreviewId) || studentsInArrears[0];
-                          if (currentPreviewItem) {
-                            return (
-                              <div className="bg-[#d9fdd3] text-slate-800 text-[10px] p-2 rounded-lg max-w-[85%] self-end shadow-sm relative border border-[#e1f7de]">
-                                <div className="whitespace-pre-wrap font-sans leading-relaxed">
-                                  {generateBroadcastText(currentPreviewItem.siswa, currentPreviewItem.arrears.length)}
-                                </div>
-                                <span className="text-[7px] text-slate-400 font-medium float-right mt-0.5 flex items-center gap-0.5 select-none">
-                                  {new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' })}
-                                  <span className="text-blue-500 font-bold">✓✓</span>
-                                </span>
-                              </div>
-                            );
-                          }
-                          return (
-                            <div className="bg-white/85 backdrop-blur-sm text-slate-500 text-center py-4 px-3 rounded-lg text-[9px] font-medium border border-slate-200/50">
-                              Belum ada data siswa menunggak.
-                            </div>
-                          );
-                        })()}
-                      </div>
-                    </div>
                   </div>
 
                   {/* RIGHT PANEL: STUDENT ARREARS LIST */}
-                  <div className="lg:col-span-7 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full min-h-0">
+                  <div className="lg:col-span-8 bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden flex flex-col h-full min-h-0">
                     {/* Panel Header & Filter bar */}
                     <div className="p-4 border-b border-slate-100 space-y-2.5 bg-slate-50/50 shrink-0">
                       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
