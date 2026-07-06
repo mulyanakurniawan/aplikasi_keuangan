@@ -47,10 +47,11 @@ export default function App() {
 
   const fetchSupabaseData = async () => {
     setIsLoading(true);
-    const { data: pData } = await supabase.from('profiles').select('*');
-    if (pData) {
-      setProfiles(pData as Profile[]);
-      supabase.auth.getSession().then(({ data: { session: s } }) => {
+    try {
+      const { data: pData } = await supabase.from('profiles').select('*');
+      if (pData) {
+        setProfiles(pData as Profile[]);
+        const { data: { session: s } } = await supabase.auth.getSession();
         if (s?.user) {
           const matched = (pData as Profile[]).find(p => p.email === s.user.email);
           if (matched) {
@@ -58,12 +59,15 @@ export default function App() {
             setCurrentPath(matched.role === 'admin' ? '/admin/dashboard' : '/siswa/dashboard');
           }
         }
-      });
+      }
+      
+      const { data: payData } = await supabase.from('spp_pembayaran').select('*');
+      if (payData) setPayments(payData as SppPembayaran[]);
+    } catch (e) {
+      console.error("Failed to fetch database data:", e);
+    } finally {
+      setIsLoading(false);
     }
-    
-    const { data: payData } = await supabase.from('spp_pembayaran').select('*');
-    if (payData) setPayments(payData as SppPembayaran[]);
-    setIsLoading(false);
   };
 
   useEffect(() => {
@@ -193,13 +197,23 @@ export default function App() {
     }
   };
 
+  // Show premium loading screen if data is being fetched
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-50 flex flex-col justify-center items-center font-sans">
+        <div className="w-10 h-10 border-4 border-emerald-600 border-t-transparent rounded-full animate-spin"></div>
+        <p className="text-xs text-slate-500 font-bold mt-4 tracking-wider uppercase">Memuat Dasbor SPP...</p>
+      </div>
+    );
+  }
+
   // Render Admin Dashboard in full screen (escaping global wrapper)
   if (currentPath === '/admin/dashboard' && session.user?.role === 'admin') {
     return (
       <AdminDashboard
         profiles={profiles}
         payments={payments}
-        currentProfile={profiles.find(p => p.id === session.user?.id) || profiles[0]}
+        currentProfile={profiles.find(p => p.id === session.user?.id) || profiles[0] || { id: 'fallback', nama: 'Administrator', nis: '-', kelas: '-', role: 'admin', email: 'admin@school.com' }}
         onUpdateProfiles={setProfiles}
         onUpdatePayments={setPayments}
         onLogout={handleLogout}
@@ -343,7 +357,7 @@ export default function App() {
           {/* ------------------------------------- */}
           {currentPath === '/siswa/dashboard' && session.user?.role === 'siswa' && (
             <SiswaDashboard
-              currentProfile={profiles.find(p => p.id === session.user?.id) || profiles[1]}
+              currentProfile={profiles.find(p => p.id === session.user?.id) || profiles.find(p => p.role === 'siswa') || { id: 'fallback', nama: 'Siswa', nis: '-', kelas: '-', role: 'siswa', email: 'siswa@school.com' }}
               payments={payments}
               onLogout={handleLogout}
               onOpenSQL={() => {}}
