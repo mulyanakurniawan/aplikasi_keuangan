@@ -76,7 +76,14 @@ Wassalamu'alaikum Wr. Wb.`
   // Excel Import States
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
   const [importDefaultKelas, setImportDefaultKelas] = useState('X-A');
-  const [importResults, setImportResults] = useState<{ nama: string; nis: string; password: string }[] | null>(null);
+  const [importResults, setImportResults] = useState<{ 
+    nama: string; 
+    nis: string; 
+    kelas?: string; 
+    email?: string; 
+    no_hp?: string; 
+    password: string;
+  }[] | null>(null);
   const [isImporting, setIsImporting] = useState(false);
   const [isImportUploaded, setIsImportUploaded] = useState(false);
 
@@ -112,9 +119,22 @@ Wassalamu'alaikum Wr. Wb.`
   const handleDownloadTemplate = () => {
     try {
       const wsData = [
-        { 'Nama': 'Ahmad Ridwan' },
-        { 'Nama': 'Siti Sarah' },
-        { 'Nama': 'Muhammad Fauzi' }
+        { 
+          'Nama': 'Ahmad Ridwan',
+          'NIS': '24001',
+          'Kelas': 'X-A',
+          'Email': 'wali.ahmad@babussalam.sch.id',
+          'No HP': '628123456789',
+          'Password': 'rahasiaahmad'
+        },
+        { 
+          'Nama': 'Siti Sarah',
+          'NIS': '',
+          'Kelas': '',
+          'Email': '',
+          'No HP': '',
+          'Password': ''
+        }
       ];
       const ws = XLSX.utils.json_to_sheet(wsData);
       const wb = XLSX.utils.book_new();
@@ -142,7 +162,14 @@ Wassalamu'alaikum Wr. Wb.`
         // Convert worksheet to JSON
         const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
         
-        const parsed: { nama: string; nis: string; password: string }[] = [];
+        const parsed: { 
+          nama: string; 
+          nis: string; 
+          kelas?: string; 
+          email?: string; 
+          no_hp?: string; 
+          password: string; 
+        }[] = [];
         
         jsonData.forEach((row) => {
           let nama = '';
@@ -156,8 +183,14 @@ Wassalamu'alaikum Wr. Wb.`
           }
 
           if (nama) {
+            // Find NIS/Username
+            const nisKey = keys.find(k => k.toLowerCase() === 'nis' || k.toLowerCase() === 'username' || k.toLowerCase() === 'nisn');
+            let providedNis = nisKey ? String(row[nisKey]).trim() : '';
+
             // Clean username: all lowercase, alphanumeric only, no spaces
-            let baseUsername = nama.toLowerCase().replace(/[^a-z0-9]/g, '');
+            let baseUsername = providedNis 
+              ? providedNis.toLowerCase().replace(/[^a-z0-9]/g, '') 
+              : nama.toLowerCase().replace(/[^a-z0-9]/g, '');
             if (!baseUsername) baseUsername = 'siswa';
             
             // Check duplicates in active profiles and parsed array
@@ -172,11 +205,40 @@ Wassalamu'alaikum Wr. Wb.`
               nis = `${baseUsername}${counter}`;
             }
 
-            // Generate user-friendly random password (e.g. "Babus" + 4 digit number)
-            const randNum = Math.floor(1000 + Math.random() * 9000);
-            const password = `Babus${randNum}`;
+            // Get Kelas from row
+            const kelasKey = keys.find(k => k.toLowerCase() === 'kelas' || k.toLowerCase() === 'class');
+            let kelas = kelasKey ? String(row[kelasKey]).trim() : '';
 
-            parsed.push({ nama, nis, password });
+            // Get Email from row
+            const emailKey = keys.find(k => k.toLowerCase() === 'email' || k.toLowerCase() === 'email wali');
+            let email = emailKey ? String(row[emailKey]).trim() : '';
+
+            // Get No HP from row
+            const noHpKey = keys.find(k => k.toLowerCase() === 'no hp' || k.toLowerCase() === 'nohp' || k.toLowerCase() === 'phone' || k.toLowerCase() === 'whatsapp' || k.toLowerCase() === 'no_hp');
+            let noHp = noHpKey ? String(row[noHpKey]).trim() : '';
+            if (noHp) {
+              noHp = noHp.replace(/[^0-9]/g, '');
+              if (noHp.startsWith('08')) {
+                noHp = '628' + noHp.slice(2);
+              }
+            }
+
+            // Get Password from row, generate if empty
+            const passwordKey = keys.find(k => k.toLowerCase() === 'password' || k.toLowerCase() === 'pass' || k.toLowerCase() === 'sandi');
+            let password = passwordKey ? String(row[passwordKey]).trim() : '';
+            if (!password) {
+              const randNum = Math.floor(1000 + Math.random() * 9000);
+              password = `Babus${randNum}`;
+            }
+
+            parsed.push({ 
+              nama, 
+              nis, 
+              kelas: kelas || undefined,
+              email: email || undefined,
+              no_hp: noHp || undefined,
+              password 
+            });
           }
         });
 
@@ -210,10 +272,11 @@ Wassalamu'alaikum Wr. Wb.`
           id: studentId,
           nama: student.nama,
           nis: student.nis,
-          kelas: importDefaultKelas,
+          kelas: student.kelas || importDefaultKelas,
           role: 'siswa',
-          email: `${student.nis}@babussalam.sch.id`,
-          password: student.password
+          email: student.email || `${student.nis}@babussalam.sch.id`,
+          password: student.password,
+          no_hp: student.no_hp || null
         });
         
         // Generate SPP payments for the year
@@ -255,12 +318,14 @@ Wassalamu'alaikum Wr. Wb.`
         'Nama': s.nama,
         'Username / NIS': s.nis,
         'Password': s.password,
-        'Kelas': importDefaultKelas
+        'Kelas': s.kelas || importDefaultKelas,
+        'Email Wali': s.email || `${s.nis}@babussalam.sch.id`,
+        'No HP': s.no_hp || '-'
       }));
       const ws = XLSX.utils.json_to_sheet(wsData);
       const wb = XLSX.utils.book_new();
       XLSX.utils.book_append_sheet(wb, ws, 'Kredensial Siswa');
-      XLSX.writeFile(wb, `Kredensial_Siswa_Baru_${importDefaultKelas}.xlsx`);
+      XLSX.writeFile(wb, `Kredensial_Siswa_Baru.xlsx`);
       triggerToast('Daftar kredensial berhasil diunduh!');
     } catch (e) {
       console.error(e);
