@@ -565,37 +565,37 @@ Wassalamu'alaikum Wr. Wb.`
       <motion.div 
         initial={false}
         animate={{ x: isMobileMenuOpen ? 0 : (window.innerWidth < 768 ? -300 : 0) }}
-        className={`fixed md:relative w-72 bg-emerald-900 border-r border-emerald-950 flex-shrink-0 h-full z-40 transition-transform duration-300 md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.05)]`}
+        className={`fixed md:relative w-72 bg-emerald-600 border-r border-emerald-700 flex-shrink-0 h-full z-40 transition-transform duration-300 md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.05)]`}
       >
         {/* Sidebar Header / Logo */}
-        <div className="p-6 h-20 flex justify-between items-center border-b border-emerald-850/60 mt-14 md:mt-0">
+        <div className="p-6 h-20 flex justify-between items-center border-b border-emerald-500/55 mt-14 md:mt-0">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-emerald-800 border border-emerald-700/60 rounded-lg flex items-center justify-center shadow-sm animate-bounce-slow">
-              <Wallet className="w-5 h-5 text-yellow-450" />
+            <div className="w-8 h-8 bg-emerald-700 border border-emerald-555 rounded-lg flex items-center justify-center shadow-sm animate-bounce-slow">
+              <Wallet className="w-5 h-5 text-yellow-300" />
             </div>
             <div>
               <span className="font-black text-white text-sm tracking-tight block">SMA BABUSSALAM</span>
-              <span className="text-[9px] font-bold text-yellow-400 uppercase tracking-widest">Admin SPP</span>
+              <span className="text-[9px] font-bold text-yellow-300 uppercase tracking-widest">Admin SPP</span>
             </div>
           </div>
-          <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-emerald-250 hover:text-white p-1 bg-emerald-800 rounded">
+          <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-emerald-100 hover:text-white p-1 bg-emerald-750 rounded">
             <X className="w-5 h-5" />
           </button>
         </div>
         
         {/* Navigation Menu */}
         <div className="flex-1 overflow-y-auto py-6 space-y-1.5 px-3">
-          <p className="px-4 text-[10px] font-bold text-emerald-350 uppercase tracking-widest mb-2">Menu Utama</p>
+          <p className="px-4 text-[10px] font-bold text-emerald-100 uppercase tracking-widest mb-2">Menu Utama</p>
 
           <button 
             onClick={() => {setActiveTab('ringkasan'); setIsMobileMenuOpen(false);}} 
             className={`w-full flex items-center gap-3 px-4 py-3 text-sm rounded-xl transition-all duration-200 cursor-pointer border-l-4 ${
               activeTab === 'ringkasan' 
-                ? 'bg-emerald-850/80 text-white font-bold shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] border-yellow-500' 
-                : 'text-emerald-150 hover:bg-emerald-850/30 hover:text-white font-medium border-transparent'
+                ? 'bg-white text-emerald-700 font-bold shadow border-yellow-500' 
+                : 'text-white hover:bg-white/10 hover:text-white font-medium border-transparent'
             }`}
           >
-            <TrendingUp className={`w-5 h-5 ${activeTab === 'ringkasan' ? 'text-yellow-455' : 'text-emerald-300'}`} /> 
+            <TrendingUp className={`w-5 h-5 ${activeTab === 'ringkasan' ? 'text-emerald-600' : 'text-emerald-100'}`} /> 
             Ringkasan &amp; Laporan
           </button>
 
@@ -603,11 +603,11 @@ Wassalamu'alaikum Wr. Wb.`
             onClick={() => {setActiveTab('siswa'); setIsMobileMenuOpen(false);}} 
             className={`w-full flex items-center gap-3 px-4 py-3 text-sm rounded-xl transition-all duration-200 cursor-pointer border-l-4 ${
               activeTab === 'siswa' 
-                ? 'bg-emerald-850/80 text-white font-bold shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] border-yellow-500' 
-                : 'text-emerald-150 hover:bg-emerald-850/30 hover:text-white font-medium border-transparent'
+                ? 'bg-white text-emerald-700 font-bold shadow border-yellow-500' 
+                : 'text-white hover:bg-white/10 hover:text-white font-medium border-transparent'
             }`}
           >
-            <Users className={`w-5 h-5 ${activeTab === 'siswa' ? 'text-yellow-455' : 'text-emerald-300'}`} /> 
+            <Users className={`w-5 h-5 ${activeTab === 'siswa' ? 'text-emerald-600' : 'text-emerald-100'}`} /> 
             Manajemen Siswa
           </button>
 
@@ -615,11 +615,11 @@ Wassalamu'alaikum Wr. Wb.`
             onClick={() => {setActiveTab('pembayaran'); setIsMobileMenuOpen(false);}} 
             className={`w-full flex items-center gap-3 px-4 py-3 text-sm rounded-xl transition-all duration-200 cursor-pointer border-l-4 ${
               activeTab === 'pembayaran' 
-                ? 'bg-emerald-850/80 text-white font-bold shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] border-yellow-500' 
-                : 'text-emerald-150 hover:bg-emerald-850/30 hover:text-white font-medium border-transparent'
+                ? 'bg-white text-emerald-700 font-bold shadow border-yellow-500' 
+                : 'text-white hover:bg-white/10 hover:text-white font-medium border-transparent'
             }`}
           >
-            <Wallet className={`w-5 h-5 ${activeTab === 'pembayaran' ? 'text-yellow-455' : 'text-emerald-300'}`} /> 
+            <Wallet className={`w-5 h-5 ${activeTab === 'pembayaran' ? 'text-emerald-600' : 'text-emerald-100'}`} /> 
             Entri SPP Siswa
           </button>
 
@@ -627,30 +627,30 @@ Wassalamu'alaikum Wr. Wb.`
             onClick={() => {setActiveTab('broadcast'); setIsMobileMenuOpen(false);}} 
             className={`w-full flex items-center gap-3 px-4 py-3 text-sm rounded-xl transition-all duration-200 cursor-pointer border-l-4 ${
               activeTab === 'broadcast' 
-                ? 'bg-emerald-850/80 text-white font-bold shadow-[inset_0_1px_1px_rgba(255,255,255,0.1)] border-yellow-500' 
-                : 'text-emerald-150 hover:bg-emerald-850/30 hover:text-white font-medium border-transparent'
+                ? 'bg-white text-emerald-700 font-bold shadow border-yellow-500' 
+                : 'text-white hover:bg-white/10 hover:text-white font-medium border-transparent'
             }`}
           >
-            <MessageCircle className={`w-5 h-5 ${activeTab === 'broadcast' ? 'text-yellow-455' : 'text-emerald-300'}`} /> 
+            <MessageCircle className={`w-5 h-5 ${activeTab === 'broadcast' ? 'text-emerald-600' : 'text-emerald-100'}`} /> 
             Broadcast Tagihan
           </button>
         </div>
         
         {/* Sidebar Footer (Profile & Actions) */}
-        <div className="p-4 border-t border-emerald-850 bg-emerald-950/40">
-          <div className="flex items-center justify-between gap-2 p-2 bg-emerald-900/50 border border-emerald-800/50 rounded-xl shadow-sm">
+        <div className="p-4 border-t border-emerald-500/40 bg-emerald-700/50">
+          <div className="flex items-center justify-between gap-2 p-2 bg-emerald-700 border border-emerald-500/40 rounded-xl shadow-sm">
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-450 to-yellow-350 text-emerald-900 font-extrabold flex items-center justify-center text-xs shrink-0 shadow-sm">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 to-yellow-300 text-emerald-950 font-extrabold flex items-center justify-center text-xs shrink-0 shadow-sm">
                 {currentProfile.nama.slice(0,2).toUpperCase()}
               </div>
               <div className="overflow-hidden">
                 <span className="text-xs font-bold text-white block truncate">{currentProfile.nama}</span>
-                <span className="text-[9px] text-emerald-250 block truncate">{currentProfile.email}</span>
+                <span className="text-[9px] text-emerald-100 block truncate">{currentProfile.email}</span>
               </div>
             </div>
             <button 
               onClick={onLogout} 
-              className="p-2 text-emerald-300 hover:text-white hover:bg-rose-600/90 rounded-lg transition cursor-pointer shrink-0"
+              className="p-2 text-emerald-100 hover:text-white hover:bg-rose-600/90 rounded-lg transition cursor-pointer shrink-0"
               title="Keluar dari sistem"
             >
               <LogOut className="w-4 h-4" />
