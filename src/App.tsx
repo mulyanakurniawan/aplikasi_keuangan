@@ -231,15 +231,16 @@ export default function App() {
           
           {/* Logo & Branding */}
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-emerald-600 rounded-lg flex items-center justify-center text-white shadow-sm">
-              <GraduationCap className="w-6 h-6" id="logo-cap-svg" />
+            <div className="w-10 h-10 bg-gradient-to-tr from-emerald-600 to-yellow-500 rounded-lg flex items-center justify-center text-white shadow-md relative overflow-hidden">
+              <div className="absolute inset-0 bg-black/5"></div>
+              <GraduationCap className="w-6 h-6 text-yellow-300 relative z-10 animate-bounce-slow" id="logo-cap-svg" />
             </div>
             <div>
               <div className="flex items-center gap-1.5">
                 <span className="font-black text-slate-900 tracking-tight text-sm sm:text-base">
                   SMA PLUS BABUSSALAM
                 </span>
-                <span className="bg-emerald-100 text-emerald-800 text-[9px] font-extrabold px-1.5 py-0.5 rounded-full uppercase border border-emerald-200">
+                <span className="bg-yellow-400 text-emerald-950 text-[9px] font-black px-1.5 py-0.5 rounded-full uppercase border border-yellow-500 shadow-sm">
                   SPP Online
                 </span>
               </div>
@@ -251,11 +252,11 @@ export default function App() {
           <div className="flex items-center gap-2.5 text-xs">
             <button
               onClick={handleResetDemoState}
-              className="text-slate-400 hover:text-rose-600 p-1.5 rounded-lg border border-transparent hover:border-rose-100 transition duration-150 cursor-pointer"
+              className="text-slate-400 hover:text-emerald-600 p-1.5 rounded-lg border border-transparent hover:border-yellow-200 hover:bg-yellow-50 transition duration-150 cursor-pointer"
               title="Reset Demo Data"
               id="btn-reset-demo"
             >
-              <Sparkles className="w-4 h-4" />
+              <Sparkles className="w-4 h-4 text-emerald-600" />
             </button>
           </div>
         </div>
@@ -274,9 +275,9 @@ export default function App() {
               {/* Outer Login Card */}
               <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
                 {/* Visual Banner Accent */}
-                <div className="bg-slate-50 border-b border-slate-200 p-8 text-center relative">
+                <div className="bg-gradient-to-b from-emerald-50/30 via-yellow-50/20 to-white border-b border-slate-100 p-8 text-center relative">
                   <div className="relative space-y-2">
-                    <span className="bg-emerald-50 text-emerald-800 text-[10px] font-bold tracking-wider px-2.5 py-1 rounded-full border border-emerald-200 uppercase inline-block">
+                    <span className="bg-gradient-to-r from-emerald-600 to-yellow-500 text-white text-[10px] font-extrabold tracking-wider px-3 py-1 rounded-full shadow-sm uppercase inline-block">
                       Portal Pembayaran SPP
                     </span>
                     <h2 className="text-xl font-extrabold tracking-tight text-slate-900">

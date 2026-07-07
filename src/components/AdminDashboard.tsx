@@ -347,10 +347,10 @@ Wassalamu'alaikum Wr. Wb.`
 
           <button 
             onClick={() => {setActiveTab('ringkasan'); setIsMobileMenuOpen(false);}} 
-            className={`w-full flex items-center gap-3 px-4 py-3 text-sm rounded-xl transition-all duration-200 cursor-pointer ${
+            className={`w-full flex items-center gap-3 px-4 py-3 text-sm rounded-xl transition-all duration-200 cursor-pointer border-l-4 ${
               activeTab === 'ringkasan' 
-                ? 'bg-emerald-50 text-emerald-700 font-bold shadow-sm ring-1 ring-emerald-100' 
-                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium'
+                ? 'bg-emerald-50 text-emerald-700 font-bold shadow-sm ring-1 ring-emerald-100 border-yellow-500' 
+                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium border-transparent'
             }`}
           >
             <TrendingUp className={`w-5 h-5 ${activeTab === 'ringkasan' ? 'text-emerald-600' : 'text-slate-400'}`} /> 
@@ -359,10 +359,10 @@ Wassalamu'alaikum Wr. Wb.`
 
           <button 
             onClick={() => {setActiveTab('siswa'); setIsMobileMenuOpen(false);}} 
-            className={`w-full flex items-center gap-3 px-4 py-3 text-sm rounded-xl transition-all duration-200 cursor-pointer ${
+            className={`w-full flex items-center gap-3 px-4 py-3 text-sm rounded-xl transition-all duration-200 cursor-pointer border-l-4 ${
               activeTab === 'siswa' 
-                ? 'bg-emerald-50 text-emerald-700 font-bold shadow-sm ring-1 ring-emerald-100' 
-                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium'
+                ? 'bg-emerald-50 text-emerald-700 font-bold shadow-sm ring-1 ring-emerald-100 border-yellow-500' 
+                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium border-transparent'
             }`}
           >
             <Users className={`w-5 h-5 ${activeTab === 'siswa' ? 'text-emerald-600' : 'text-slate-400'}`} /> 
@@ -371,10 +371,10 @@ Wassalamu'alaikum Wr. Wb.`
 
           <button 
             onClick={() => {setActiveTab('pembayaran'); setIsMobileMenuOpen(false);}} 
-            className={`w-full flex items-center gap-3 px-4 py-3 text-sm rounded-xl transition-all duration-200 cursor-pointer ${
+            className={`w-full flex items-center gap-3 px-4 py-3 text-sm rounded-xl transition-all duration-200 cursor-pointer border-l-4 ${
               activeTab === 'pembayaran' 
-                ? 'bg-emerald-50 text-emerald-700 font-bold shadow-sm ring-1 ring-emerald-100' 
-                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium'
+                ? 'bg-emerald-50 text-emerald-700 font-bold shadow-sm ring-1 ring-emerald-100 border-yellow-500' 
+                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium border-transparent'
             }`}
           >
             <Wallet className={`w-5 h-5 ${activeTab === 'pembayaran' ? 'text-emerald-600' : 'text-slate-400'}`} /> 
@@ -383,10 +383,10 @@ Wassalamu'alaikum Wr. Wb.`
 
           <button 
             onClick={() => {setActiveTab('broadcast'); setIsMobileMenuOpen(false);}} 
-            className={`w-full flex items-center gap-3 px-4 py-3 text-sm rounded-xl transition-all duration-200 cursor-pointer ${
+            className={`w-full flex items-center gap-3 px-4 py-3 text-sm rounded-xl transition-all duration-200 cursor-pointer border-l-4 ${
               activeTab === 'broadcast' 
-                ? 'bg-emerald-50 text-emerald-700 font-bold shadow-sm ring-1 ring-emerald-100' 
-                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium'
+                ? 'bg-emerald-50 text-emerald-700 font-bold shadow-sm ring-1 ring-emerald-100 border-yellow-500' 
+                : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 font-medium border-transparent'
             }`}
           >
             <MessageCircle className={`w-5 h-5 ${activeTab === 'broadcast' ? 'text-emerald-600' : 'text-slate-400'}`} /> 
@@ -398,7 +398,7 @@ Wassalamu'alaikum Wr. Wb.`
         <div className="p-4 border-t border-slate-100 bg-slate-50/50">
           <div className="flex items-center justify-between gap-2 p-2 bg-white border border-slate-200 rounded-xl shadow-sm">
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-8 h-8 rounded-full bg-emerald-100 text-emerald-700 font-bold flex items-center justify-center text-xs shrink-0">
+              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-emerald-600 to-yellow-400 text-white font-bold flex items-center justify-center text-xs shrink-0 shadow-sm">
                 {currentProfile.nama.slice(0,2).toUpperCase()}
               </div>
               <div className="overflow-hidden">
