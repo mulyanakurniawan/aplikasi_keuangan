@@ -73,6 +73,13 @@ Wassalamu'alaikum Wr. Wb.`
   const [editingStudent, setEditingStudent] = useState<Profile | null>(null);
   const [studentForm, setStudentForm] = useState({ nama: '', nis: '', kelas: '', email: '', password: '' });
 
+  // Excel Import States
+  const [isImportModalOpen, setIsImportModalOpen] = useState(false);
+  const [importDefaultKelas, setImportDefaultKelas] = useState('X-A');
+  const [importResults, setImportResults] = useState<{ nama: string; nis: string; password: string }[] | null>(null);
+  const [isImporting, setIsImporting] = useState(false);
+  const [isImportUploaded, setIsImportUploaded] = useState(false);
+
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
   const triggerToast = (text: string, type: 'success' | 'error' = 'success') => {
@@ -92,6 +99,173 @@ Wassalamu'alaikum Wr. Wb.`
 
   const formatRupiah = (value: number) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
+  };
+
+  const handleOpenImportModal = () => {
+    setImportResults(null);
+    setImportDefaultKelas('X-A');
+    setIsImportUploaded(false);
+    setIsImporting(false);
+    setIsImportModalOpen(true);
+  };
+
+  const handleDownloadTemplate = () => {
+    try {
+      const wsData = [
+        { 'Nama': 'Ahmad Ridwan' },
+        { 'Nama': 'Siti Sarah' },
+        { 'Nama': 'Muhammad Fauzi' }
+      ];
+      const ws = XLSX.utils.json_to_sheet(wsData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Template Siswa');
+      XLSX.writeFile(wb, 'Template_Import_Siswa.xlsx');
+      triggerToast('Template Excel berhasil diunduh!');
+    } catch (e) {
+      console.error(e);
+      triggerToast('Gagal mengunduh template!', 'error');
+    }
+  };
+
+  const handleExcelImport = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      try {
+        const data = new Uint8Array(event.target?.result as ArrayBuffer);
+        const workbook = XLSX.read(data, { type: 'array' });
+        const sheetName = workbook.SheetNames[0];
+        const worksheet = workbook.Sheets[sheetName];
+        
+        // Convert worksheet to JSON
+        const jsonData = XLSX.utils.sheet_to_json(worksheet) as any[];
+        
+        const parsed: { nama: string; nis: string; password: string }[] = [];
+        
+        jsonData.forEach((row) => {
+          let nama = '';
+          const keys = Object.keys(row);
+          // Look for 'Nama' or 'Name' or similar column header
+          const nameKey = keys.find(k => k.toLowerCase() === 'nama' || k.toLowerCase() === 'name');
+          if (nameKey) {
+            nama = String(row[nameKey]).trim();
+          } else if (keys.length > 0) {
+            nama = String(row[keys[0]]).trim();
+          }
+
+          if (nama) {
+            // Clean username: all lowercase, alphanumeric only, no spaces
+            let baseUsername = nama.toLowerCase().replace(/[^a-z0-9]/g, '');
+            if (!baseUsername) baseUsername = 'siswa';
+            
+            // Check duplicates in active profiles and parsed array
+            let nis = baseUsername;
+            let counter = 1;
+            const isNisTaken = (username: string) => {
+              return profiles.some(p => p.nis === username) || parsed.some(p => p.nis === username);
+            };
+
+            while (isNisTaken(nis)) {
+              counter++;
+              nis = `${baseUsername}${counter}`;
+            }
+
+            // Generate user-friendly random password (e.g. "Babus" + 4 digit number)
+            const randNum = Math.floor(1000 + Math.random() * 9000);
+            const password = `Babus${randNum}`;
+
+            parsed.push({ nama, nis, password });
+          }
+        });
+
+        if (parsed.length === 0) {
+          triggerToast('Tidak ada data siswa yang valid ditemukan di file Excel!', 'error');
+        } else {
+          setImportResults(parsed);
+          triggerToast(`Berhasil membaca ${parsed.length} siswa dari Excel!`);
+        }
+      } catch (err) {
+        console.error(err);
+        triggerToast('Gagal memproses file Excel!', 'error');
+      }
+    };
+    reader.readAsArrayBuffer(file);
+    e.target.value = '';
+  };
+
+  const handleUploadImportedStudents = async () => {
+    if (!importResults || importResults.length === 0) return;
+    setIsImporting(true);
+    
+    try {
+      const newProfiles: Profile[] = [];
+      const newPayments: any[] = [];
+      
+      importResults.forEach((student) => {
+        const studentId = crypto.randomUUID();
+        
+        newProfiles.push({
+          id: studentId,
+          nama: student.nama,
+          nis: student.nis,
+          kelas: importDefaultKelas,
+          role: 'siswa',
+          email: `${student.nis}@babussalam.sch.id`,
+          password: student.password
+        });
+        
+        // Generate SPP payments for the year
+        BULAN_LIST.forEach((bulan) => {
+          newPayments.push({
+            siswa_id: studentId,
+            tahun_ajaran: '2025/2026',
+            bulan: bulan,
+            nominal: NOMINAL_SPP,
+            status: 'belum_bayar'
+          });
+        });
+      });
+      
+      // Upload profiles to Supabase
+      const { error: pError } = await supabase.from('profiles').insert(newProfiles);
+      if (pError) throw pError;
+      
+      // Upload payments to Supabase
+      const { error: payError } = await supabase.from('spp_pembayaran').insert(newPayments);
+      if (payError) throw payError;
+      
+      onOpenSQL(); // refresh lists
+      triggerToast(`Berhasil menyimpan ${importResults.length} siswa baru!`);
+      setIsImportUploaded(true);
+    } catch (err: any) {
+      console.error(err);
+      triggerToast(`Gagal mengunggah data: ${err.message || 'Error'}`, 'error');
+    } finally {
+      setIsImporting(false);
+    }
+  };
+
+  const handleExportCredentials = () => {
+    if (!importResults) return;
+    try {
+      const wsData = importResults.map((s, idx) => ({
+        'No': idx + 1,
+        'Nama': s.nama,
+        'Username / NIS': s.nis,
+        'Password': s.password,
+        'Kelas': importDefaultKelas
+      }));
+      const ws = XLSX.utils.json_to_sheet(wsData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, 'Kredensial Siswa');
+      XLSX.writeFile(wb, `Kredensial_Siswa_Baru_${importDefaultKelas}.xlsx`);
+      triggerToast('Daftar kredensial berhasil diunduh!');
+    } catch (e) {
+      console.error(e);
+      triggerToast('Gagal mengekspor kredensial!', 'error');
+    }
   };
 
   const handleOpenAddModal = () => {
@@ -532,9 +706,14 @@ Wassalamu'alaikum Wr. Wb.`
                     <h3 className="font-bold text-slate-850 text-sm">Daftar Induk Siswa</h3>
                     <p className="text-[11px] text-slate-500 mt-1">Klik nama siswa untuk melihat rincian pembayaran SPP mereka langsung.</p>
                   </div>
-                  <button onClick={handleOpenAddModal} className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-2 rounded-lg cursor-pointer">
-                    <UserPlus className="w-4 h-4" /> Tambah Siswa
-                  </button>
+                  <div className="flex gap-2">
+                    <button onClick={handleOpenImportModal} className="flex items-center gap-1.5 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs px-4 py-2 rounded-lg cursor-pointer transition shadow-sm">
+                      <FileSpreadsheet className="w-4 h-4 text-emerald-600 animate-pulse" /> Import Excel
+                    </button>
+                    <button onClick={handleOpenAddModal} className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-2 rounded-lg cursor-pointer">
+                      <UserPlus className="w-4 h-4" /> Tambah Siswa
+                    </button>
+                  </div>
                 </div>
                 <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row gap-4">
                   <input type="text" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} placeholder="Cari Siswa..." className="flex-1 bg-white border border-slate-200 rounded-lg py-2 px-4 text-xs" />
@@ -970,6 +1149,159 @@ Wassalamu'alaikum Wr. Wb.`
                   <button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition shadow">Simpan</button>
                 </div>
               </form>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* EXCEL IMPORT MODAL */}
+      <AnimatePresence>
+        {isImportModalOpen && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-xl max-w-2xl w-full overflow-hidden shadow-xl"
+            >
+              <div className="bg-slate-50 border-b border-slate-200 text-slate-900 p-4 flex justify-between items-center">
+                <h3 className="font-bold text-sm">Import Siswa dari Excel</h3>
+                <button onClick={() => setIsImportModalOpen(false)} className="text-slate-500 hover:bg-slate-200 p-1 rounded transition cursor-pointer"><X className="w-4 h-4" /></button>
+              </div>
+              <div className="p-6 space-y-6 max-h-[calc(100vh-200px)] overflow-y-auto">
+                
+                {/* Steps and Template info */}
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
+                    <h4 className="font-bold text-xs text-slate-700">Langkah 1: Unduh & Isi Template</h4>
+                    <p className="text-[11px] text-slate-500 leading-relaxed">
+                      Unduh template Excel resmi kami. Cukup isi kolom <strong>Nama</strong> dengan daftar nama siswa baru Anda.
+                    </p>
+                    <button 
+                      type="button" 
+                      onClick={handleDownloadTemplate} 
+                      className="flex items-center gap-1 bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs px-3 py-1.5 rounded-lg cursor-pointer transition shadow-sm font-semibold animate-pulse"
+                    >
+                      <Download className="w-3.5 h-3.5 text-emerald-600" /> Unduh Template Excel
+                    </button>
+                  </div>
+                  
+                  <div className="p-4 bg-slate-50 border border-slate-200 rounded-xl space-y-2.5">
+                    <h4 className="font-bold text-xs text-slate-700">Langkah 2: Pilih Kelas & Unggah</h4>
+                    <div className="space-y-1.5">
+                      <label className="text-[10px] font-bold text-slate-600 block">Kelas Tujuan Siswa:</label>
+                      <select 
+                        value={importDefaultKelas} 
+                        onChange={(e) => setImportDefaultKelas(e.target.value)} 
+                        className="w-full border bg-white rounded-lg py-1.5 px-3 text-xs focus:outline-none focus:ring-1 focus:ring-emerald-500"
+                        disabled={isImportUploaded || isImporting}
+                      >
+                        <option value="X-A">X-A</option>
+                        <option value="X-B">X-B</option>
+                        <option value="XI-A">XI-A</option>
+                        <option value="XI-B">XI-B</option>
+                        <option value="XII-A">XII-A</option>
+                        <option value="XII-C">XII-C</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Upload Action */}
+                {!isImportUploaded && (
+                  <div className="p-4 border-2 border-dashed border-slate-200 rounded-xl flex flex-col items-center justify-center py-6 text-center space-y-3 bg-slate-50/30">
+                    <FileSpreadsheet className="w-10 h-10 text-slate-400" />
+                    <div>
+                      <p className="text-xs font-bold text-slate-700">Pilih File Excel Hasil Pengisian</p>
+                      <p className="text-[10px] text-slate-400 mt-0.5">Mendukung format file .xlsx, .xls</p>
+                    </div>
+                    <label className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold px-4 py-2 rounded-lg cursor-pointer transition shadow-sm">
+                      Pilih File
+                      <input 
+                        type="file" 
+                        accept=".xlsx, .xls" 
+                        onChange={handleExcelImport} 
+                        className="hidden" 
+                        disabled={isImporting}
+                      />
+                    </label>
+                  </div>
+                )}
+
+                {/* Preview Parsed Results */}
+                {importResults && importResults.length > 0 && (
+                  <div className="space-y-2 border-t pt-4">
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-bold text-xs text-slate-700">
+                        {isImportUploaded ? 'Siswa Berhasil Ditambahkan' : 'Preview Data Siswa yang Terdeteksi'} ({importResults.length} Siswa)
+                      </h4>
+                      
+                      {isImportUploaded && (
+                        <button 
+                          onClick={handleExportCredentials}
+                          className="flex items-center gap-1.5 bg-yellow-450 hover:bg-yellow-500 text-emerald-950 text-xs font-bold px-3 py-1.5 rounded-lg cursor-pointer transition shadow"
+                        >
+                          <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-800" /> Unduh Kredensial (Excel)
+                        </button>
+                      )}
+                    </div>
+                    
+                    <div className="border border-slate-205 rounded-xl overflow-hidden max-h-60 overflow-y-auto">
+                      <table className="w-full text-left text-[11px]">
+                        <thead className="bg-slate-50 text-slate-700 border-b border-slate-200 font-bold sticky top-0">
+                          <tr>
+                            <th className="p-2.5">No</th>
+                            <th className="p-2.5">Nama Lengkap</th>
+                            <th className="p-2.5">Username / NIS</th>
+                            <th className="p-2.5">Password</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-100 bg-white">
+                          {importResults.map((student, idx) => (
+                            <tr key={idx} className="hover:bg-slate-50/50">
+                              <td className="p-2.5 font-bold text-slate-400">{idx + 1}</td>
+                              <td className="p-2.5 font-bold text-slate-800">{student.nama}</td>
+                              <td className="p-2.5 font-mono text-emerald-700 bg-emerald-50/30 font-semibold">{student.nis}</td>
+                              <td className="p-2.5 font-mono text-slate-600">{student.password}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                    {isImportUploaded && (
+                      <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-emerald-900 text-xs font-bold">
+                        Akun siswa di atas berhasil dibuat dengan status View-Only. Harap unduh daftar kredensial Excel di atas untuk membagikan username & password kepada siswa yang bersangkutan.
+                      </div>
+                    )}
+                  </div>
+                )}
+
+              </div>
+              <div className="bg-slate-50 border-t border-slate-200 p-4 flex justify-end gap-2">
+                <button 
+                  type="button" 
+                  onClick={() => setIsImportModalOpen(false)} 
+                  className="bg-white hover:bg-slate-100 border border-slate-200 text-slate-700 text-xs px-4 py-2 rounded-lg font-bold cursor-pointer transition"
+                >
+                  {isImportUploaded ? 'Selesai & Tutup' : 'Batal'}
+                </button>
+                
+                {!isImportUploaded && importResults && importResults.length > 0 && (
+                  <button 
+                    type="button" 
+                    onClick={handleUploadImportedStudents} 
+                    disabled={isImporting}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white text-xs px-4 py-2 rounded-lg font-bold cursor-pointer transition shadow disabled:bg-slate-350 flex items-center gap-1.5"
+                  >
+                    {isImporting ? 'Menyimpan...' : 'Simpan Ke Database'}
+                  </button>
+                )}
+              </div>
             </motion.div>
           </motion.div>
         )}
