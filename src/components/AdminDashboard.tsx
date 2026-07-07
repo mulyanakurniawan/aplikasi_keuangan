@@ -71,7 +71,7 @@ Wassalamu'alaikum Wr. Wb.`
 
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Profile | null>(null);
-  const [studentForm, setStudentForm] = useState({ nama: '', nis: '', kelas: '', email: '' });
+  const [studentForm, setStudentForm] = useState({ nama: '', nis: '', kelas: '', email: '', password: '' });
 
   const [toastMessage, setToastMessage] = useState<{ text: string; type: 'success' | 'error' } | null>(null);
 
@@ -96,25 +96,37 @@ Wassalamu'alaikum Wr. Wb.`
 
   const handleOpenAddModal = () => {
     setEditingStudent(null);
-    setStudentForm({ nama: '', nis: '', kelas: '', email: '' });
+    setStudentForm({ nama: '', nis: '', kelas: '', email: '', password: '' });
     setIsStudentModalOpen(true);
   };
 
   const handleOpenEditModal = (siswa: Profile) => {
     setEditingStudent(siswa);
-    setStudentForm({ nama: siswa.nama, nis: siswa.nis, kelas: siswa.kelas, email: siswa.email });
+    setStudentForm({ 
+      nama: siswa.nama, 
+      nis: siswa.nis, 
+      kelas: siswa.kelas, 
+      email: siswa.email,
+      password: siswa.password || `Siswa${siswa.nis}` 
+    });
     setIsStudentModalOpen(true);
   };
 
   const handleSaveStudent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!studentForm.nama || !studentForm.nis || !studentForm.kelas || !studentForm.email) {
+    if (!studentForm.nama || !studentForm.nis || !studentForm.kelas || !studentForm.email || !studentForm.password) {
       triggerToast('Harap isi semua kolom wajib!', 'error');
       return;
     }
 
     if (editingStudent) {
-      const { error } = await supabase.from('profiles').update(studentForm).eq('id', editingStudent.id);
+      const { error } = await supabase.from('profiles').update({
+        nama: studentForm.nama,
+        nis: studentForm.nis,
+        kelas: studentForm.kelas,
+        email: studentForm.email,
+        password: studentForm.password
+      }).eq('id', editingStudent.id);
       if (error) { triggerToast('Gagal memperbarui!', 'error'); return; }
       onOpenSQL();
       triggerToast('Data siswa berhasil diperbarui!');
@@ -126,9 +138,16 @@ Wassalamu'alaikum Wr. Wb.`
       }
       
       const newSiswaId = crypto.randomUUID();
-      const generatedPassword = `Siswa${studentForm.nis}`; // Generate password from NIS
       
-      const newProfile = { id: newSiswaId, role: 'siswa', password: generatedPassword, ...studentForm };
+      const newProfile = { 
+        id: newSiswaId, 
+        role: 'siswa', 
+        nama: studentForm.nama,
+        nis: studentForm.nis,
+        kelas: studentForm.kelas,
+        email: studentForm.email,
+        password: studentForm.password 
+      };
       const newSppRecords = BULAN_LIST.map((bulan) => ({
         siswa_id: newSiswaId, tahun_ajaran: '2025/2026',
         bulan: bulan, nominal: NOMINAL_SPP, status: 'belum_bayar'
@@ -145,7 +164,7 @@ Wassalamu'alaikum Wr. Wb.`
       triggerToast('Siswa baru berhasil ditambahkan!');
       
       // Tampilkan kredensial kepada Admin
-      alert(`AKUN SISWA BERHASIL DIBUAT!\n\nNIS/Username: ${studentForm.nis}\nPassword: ${generatedPassword}\n\nCatatan: Akun ini bersifat "View-Only" (hanya dapat melihat data SPP & cetak kuitansi secara mandiri).\n\nHarap simpan atau berikan informasi ini kepada siswa yang bersangkutan.`);
+      alert(`AKUN SISWA BERHASIL DIBUAT!\n\nNIS/Username: ${studentForm.nis}\nPassword: ${studentForm.password}\n\nCatatan: Akun ini bersifat "View-Only" (hanya dapat melihat data SPP & cetak kuitansi secara mandiri).\n\nHarap simpan atau berikan informasi ini kepada siswa yang bersangkutan.`);
     }
     setIsStudentModalOpen(false);
   };
@@ -900,7 +919,21 @@ Wassalamu'alaikum Wr. Wb.`
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-600">NIS *</label>
-                  <input type="text" value={studentForm.nis} onChange={(e) => setStudentForm({ ...studentForm, nis: e.target.value })} disabled={!!editingStudent} className="w-full border rounded-lg py-2 px-3 text-xs disabled:bg-slate-100" required />
+                  <input 
+                    type="text" 
+                    value={studentForm.nis} 
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setStudentForm(prev => ({
+                        ...prev,
+                        nis: val,
+                        password: !editingStudent && (prev.password === '' || prev.password === `Siswa${prev.nis}`) ? `Siswa${val}` : prev.password
+                      }));
+                    }} 
+                    disabled={!!editingStudent} 
+                    className="w-full border rounded-lg py-2 px-3 text-xs disabled:bg-slate-100" 
+                    required 
+                  />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-600">Kelas *</label>
@@ -917,6 +950,17 @@ Wassalamu'alaikum Wr. Wb.`
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-600">Email Wali Murid *</label>
                   <input type="email" value={studentForm.email} onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })} className="w-full border rounded-lg py-2 px-3 text-xs" required />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-600">Password Akun Siswa *</label>
+                  <input 
+                    type="text" 
+                    value={studentForm.password} 
+                    onChange={(e) => setStudentForm({ ...studentForm, password: e.target.value })} 
+                    className="w-full border rounded-lg py-2 px-3 text-xs" 
+                    placeholder="Sandi login murid (default: Siswa[NIS])" 
+                    required 
+                  />
                 </div>
                 <div className="pt-4 flex justify-end gap-2 border-t mt-4">
                   <p className="text-[10px] text-slate-500 italic flex-1 self-center">
