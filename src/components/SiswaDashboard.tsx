@@ -206,6 +206,140 @@ export default function SiswaDashboard({ currentProfile, payments, onLogout, onO
     doc.save(`Kwitansi_SPP_${currentProfile.nis}_Bulan_${pembayaran.bulan}.pdf`);
   };
 
+  const handleDownloadStatement = () => {
+    try {
+      const doc = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      // Draw border
+      doc.setDrawColor(0, 168, 89); // logo-green
+      doc.setLineWidth(1.2);
+      doc.rect(5, 5, doc.internal.pageSize.width - 10, doc.internal.pageSize.height - 10);
+
+      // Kop Surat Sekolah
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(10);
+      doc.setTextColor(0, 140, 74); // emerald-700
+      doc.text("YAYASAN AL-BABUSSALAM BANDUNG", doc.internal.pageSize.width / 2, 16, { align: "center" });
+      doc.setFontSize(14);
+      doc.setTextColor(0, 168, 89); // logo-green
+      doc.text("SMA PLUS BABUSSALAM", doc.internal.pageSize.width / 2, 23, { align: "center" });
+      doc.setFont("helvetica", "normal");
+      doc.setFontSize(8);
+      doc.setTextColor(100, 116, 139); // slate-500
+      doc.text("Kawasan Pendidikan Babussalam No. 45, Ciburial, Bandung Barat", doc.internal.pageSize.width / 2, 28, { align: "center" });
+      doc.text("Telp: (022) 2501234 | Email: keuangan@babussalam.sch.id | Terakreditasi A", doc.internal.pageSize.width / 2, 32, { align: "center" });
+
+      // Divider Line
+      doc.setDrawColor(255, 230, 0); // logo-yellow
+      doc.setLineWidth(0.8);
+      doc.line(10, 37, doc.internal.pageSize.width - 10, 37);
+
+      // Title
+      doc.setFont("helvetica", "bold");
+      doc.setFontSize(12);
+      doc.setTextColor(15, 23, 42); // slate-900
+      doc.text("SURAT KETERANGAN RINCIAN TAGIHAN SPP", doc.internal.pageSize.width / 2, 48, { align: "center" });
+
+      // Student Meta
+      doc.setFontSize(9);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Nama Siswa   : ${currentProfile.nama}`, 15, 58);
+      doc.text(`NIS / Kelas  : ${currentProfile.nis} / ${currentProfile.kelas}`, 15, 63);
+      doc.text(`Tahun Ajaran : ${selectedYear}`, 15, 68);
+      doc.text(`Tanggal Cetak: ${new Date().toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' })}`, 15, 73);
+
+      // Draw Table Header
+      let startY = 82;
+      doc.setFillColor(0, 168, 89); // logo-green
+      doc.rect(15, startY, doc.internal.pageSize.width - 30, 8, "F");
+      
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(255, 255, 255);
+      doc.text("No", 18, startY + 5.5);
+      doc.text("Bulan SPP", 30, startY + 5.5);
+      doc.text("Nominal", 75, startY + 5.5);
+      doc.text("Status Pembayaran", 115, startY + 5.5);
+      doc.text("No. Invoice", 155, startY + 5.5);
+
+      // Draw Rows
+      let rowY = startY + 8;
+      doc.setFont("helvetica", "normal");
+      doc.setTextColor(15, 23, 42);
+
+      const monthsList = BULAN_LIST;
+      monthsList.forEach((bulan, idx) => {
+        const p = studentPayments.find(pay => pay.bulan === bulan);
+        const statusText = p?.status === 'lunas' ? 'LUNAS' : 'BELUM BAYAR';
+        const invoiceText = p?.invoice_no || '-';
+        const nominalText = formatRupiah(p?.nominal || 350000);
+        
+        // Alternate shading
+        if (idx % 2 === 1) {
+          doc.setFillColor(248, 250, 252); // slate-50
+          doc.rect(15, rowY, doc.internal.pageSize.width - 30, 7.5, "F");
+        }
+        
+        // Draw bottom line for each row
+        doc.setDrawColor(226, 232, 240); // slate-200
+        doc.setLineWidth(0.2);
+        doc.line(15, rowY + 7.5, doc.internal.pageSize.width - 15, rowY + 7.5);
+
+        // Print Text
+        doc.setFont("helvetica", "normal");
+        doc.text(String(idx + 1), 18, rowY + 5);
+        doc.text(bulan, 30, rowY + 5);
+        doc.text(nominalText, 75, rowY + 5);
+        
+        if (statusText === 'LUNAS') {
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(5, 122, 85); // green text
+        } else {
+          doc.setFont("helvetica", "bold");
+          doc.setTextColor(220, 38, 38); // red text
+        }
+        doc.text(statusText, 115, rowY + 5);
+        
+        doc.setFont("helvetica", "normal");
+        doc.setTextColor(15, 23, 42);
+        doc.text(invoiceText, 155, rowY + 5);
+        
+        rowY += 7.5;
+      });
+
+      // Total Unpaid Summary Box
+      rowY += 6;
+      const unpaidCount = studentPayments.filter(p => p.status === 'belum_bayar').length;
+      const totalUnpaidNominal = studentPayments.filter(p => p.status === 'belum_bayar').reduce((sum, p) => sum + p.nominal, 0);
+
+      doc.setFillColor(254, 242, 242); // red-50
+      doc.setDrawColor(254, 202, 202); // red-200
+      doc.setLineWidth(0.3);
+      doc.rect(15, rowY, doc.internal.pageSize.width - 30, 16, "FD");
+
+      doc.setFont("helvetica", "bold");
+      doc.setTextColor(153, 27, 27); // red-800
+      doc.text(`RINGKASAN TUNGGAKAN SPP:`, 19, rowY + 6);
+      doc.setFont("helvetica", "normal");
+      doc.text(`Total Bulan Belum Terbayar: ${unpaidCount} Bulan  •  Total Tagihan Tunggakan: ${formatRupiah(totalUnpaidNominal)}`, 19, rowY + 11);
+
+      // Sign-off
+      doc.setFontSize(8.5);
+      doc.setTextColor(100, 116, 139); // slate-500
+      doc.text("Penting: Keterangan tagihan ini diunduh secara online oleh siswa/orang tua.", 15, rowY + 28);
+      doc.text("Diterbitkan secara elektronik oleh SMA Plus Babussalam Bandung.", 15, rowY + 32);
+
+      doc.save(`Rincian_Tagihan_SPP_${currentProfile.nis}.pdf`);
+      alert('Rincian tagihan PDF berhasil dicetak!');
+    } catch (e) {
+      console.error(e);
+      alert('Gagal mencetak rincian tagihan!');
+    }
+  };
+
   return (
     <div className="space-y-6 animate-fade-in" id="siswa-dashboard-root">
       {/* Top Welcome / Header section */}
@@ -225,6 +359,14 @@ export default function SiswaDashboard({ currentProfile, payments, onLogout, onO
           </div>
 
           <div className="flex gap-2">
+            <button
+              onClick={handleDownloadStatement}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white border border-transparent text-xs px-4 py-2 rounded-lg font-medium transition duration-200 flex items-center gap-2 cursor-pointer shadow-sm"
+              id="btn-siswa-download-statement"
+            >
+              <FileText className="w-4 h-4 text-yellow-350" />
+              <span>Unduh Rincian Tagihan (PDF)</span>
+            </button>
             <button
               onClick={onOpenSQL}
               className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs px-4 py-2 rounded-lg font-medium transition duration-200 flex items-center gap-2 cursor-pointer shadow-xs"
@@ -275,6 +417,28 @@ export default function SiswaDashboard({ currentProfile, payments, onLogout, onO
             </div>
           </div>
         </div>
+      </div>
+
+      {/* Visual Kelunasan Progress Bar */}
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-3">
+        <div className="flex justify-between items-center text-xs">
+          <div className="flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block animate-pulse" />
+            <h3 className="font-bold text-slate-800 text-sm">Kemajuan Kelunasan SPP Tahunan ({selectedYear})</h3>
+          </div>
+          <span className="font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-150 px-2 py-0.5 rounded-full">
+            {lunasCount} / 12 Bulan Lunas ({Math.round((lunasCount / 12) * 100)}%)
+          </span>
+        </div>
+        <div className="w-full bg-slate-100 rounded-full h-3.5 relative overflow-hidden border border-slate-200/50 shadow-inner">
+          <div 
+            className="bg-gradient-to-r from-emerald-600 to-yellow-400 h-full rounded-full transition-all duration-1000 shadow-sm"
+            style={{ width: `${(lunasCount / 12) * 100}%` }}
+          />
+        </div>
+        <p className="text-[10px] text-slate-400 font-medium">
+          * Bar indikator di atas menunjukkan kemajuan pembayaran SPP bulanan siswa untuk tahun ajaran aktif. Total SPP terbayar: <strong className="text-slate-700">{formatRupiah(totalPaidNominal)}</strong>.
+        </p>
       </div>
 
       {/* Main Grid: Status Card (Large Left) and Details Summary (Right) */}

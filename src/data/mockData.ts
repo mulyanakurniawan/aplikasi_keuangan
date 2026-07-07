@@ -7,7 +7,8 @@ export const INITIAL_PROFILES: Profile[] = [
     nis: '-',
     kelas: '-',
     role: 'admin',
-    email: 'admin@babussalam.sch.id'
+    email: 'admin@babussalam.sch.id',
+    no_hp: '-'
   }
 ];
 

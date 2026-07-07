@@ -49,7 +49,8 @@ async function seed() {
       kelas: p.kelas,
       role: p.role,
       email: p.email,
-      password: p.role === 'siswa' ? 'password123' : null
+      password: p.role === 'siswa' ? 'password123' : null,
+      no_hp: p.no_hp || null
     };
   });
 

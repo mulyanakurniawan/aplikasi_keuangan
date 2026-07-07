@@ -8,6 +8,7 @@ export interface Profile {
   role: UserRole;
   email: string;
   password?: string;
+  no_hp?: string;
 }
 
 export interface SppPembayaran {

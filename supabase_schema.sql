@@ -16,7 +16,8 @@ CREATE TABLE public.profiles (
   kelas TEXT,
   role user_role NOT NULL DEFAULT 'siswa',
   email TEXT NOT NULL,
-  password TEXT -- Kolom baru untuk sistem login hibrida siswa
+  password TEXT, -- Kolom baru untuk sistem login hibrida siswa
+  no_hp TEXT
 );
 
 -- Buat tabel spp_pembayaran

@@ -270,7 +270,7 @@ Wassalamu'alaikum Wr. Wb.`
 
   const handleOpenAddModal = () => {
     setEditingStudent(null);
-    setStudentForm({ nama: '', nis: '', kelas: '', email: '', password: '' });
+    setStudentForm({ nama: '', nis: '', kelas: '', email: '', password: '', no_hp: '' });
     setIsStudentModalOpen(true);
   };
 
@@ -281,7 +281,8 @@ Wassalamu'alaikum Wr. Wb.`
       nis: siswa.nis, 
       kelas: siswa.kelas, 
       email: siswa.email,
-      password: siswa.password || `Siswa${siswa.nis}` 
+      password: siswa.password || `Siswa${siswa.nis}`,
+      no_hp: siswa.no_hp || ''
     });
     setIsStudentModalOpen(true);
   };
@@ -299,7 +300,8 @@ Wassalamu'alaikum Wr. Wb.`
         nis: studentForm.nis,
         kelas: studentForm.kelas,
         email: studentForm.email,
-        password: studentForm.password
+        password: studentForm.password,
+        no_hp: studentForm.no_hp || null
       }).eq('id', editingStudent.id);
       if (error) { triggerToast('Gagal memperbarui!', 'error'); return; }
       onOpenSQL();
@@ -320,7 +322,8 @@ Wassalamu'alaikum Wr. Wb.`
         nis: studentForm.nis,
         kelas: studentForm.kelas,
         email: studentForm.email,
-        password: studentForm.password 
+        password: studentForm.password,
+        no_hp: studentForm.no_hp || null
       };
       const newSppRecords = BULAN_LIST.map((bulan) => ({
         siswa_id: newSiswaId, tahun_ajaran: '2025/2026',
@@ -965,7 +968,11 @@ Wassalamu'alaikum Wr. Wb.`
 
                           const handleWA = (e: React.MouseEvent) => {
                             e.stopPropagation(); // Prevent select row
-                            window.open(`https://wa.me/?text=${encodeURIComponent(text)}`, '_blank');
+                            const formattedPhone = siswa.no_hp ? siswa.no_hp.replace(/[^0-9]/g, '') : '';
+                            const waUrl = formattedPhone 
+                              ? `https://wa.me/${formattedPhone}?text=${encodeURIComponent(text)}`
+                              : `https://wa.me/?text=${encodeURIComponent(text)}`;
+                            window.open(waUrl, '_blank');
                             // Mark as contacted automatically when sending via WA
                             if (!isContacted) {
                               toggleContacted(siswa.id);
@@ -1003,7 +1010,7 @@ Wassalamu'alaikum Wr. Wb.`
                                     )}
                                   </h5>
                                   <p className="text-[9px] text-slate-400 font-medium mt-0.5">
-                                    NIS: {siswa.nis} • Kelas: {siswa.kelas}
+                                    NIS: {siswa.nis} • Kelas: {siswa.kelas} {siswa.no_hp && `• WA: +${siswa.no_hp}`}
                                   </p>
                                 </div>
                               </div>
@@ -1129,6 +1136,10 @@ Wassalamu'alaikum Wr. Wb.`
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-600">Email Wali Murid *</label>
                   <input type="email" value={studentForm.email} onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })} className="w-full border rounded-lg py-2 px-3 text-xs" required />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-600">No. HP / WhatsApp Wali Murid (Mulai dengan 62)</label>
+                  <input type="text" value={studentForm.no_hp} onChange={(e) => setStudentForm({ ...studentForm, no_hp: e.target.value })} placeholder="Contoh: 628123456789" className="w-full border rounded-lg py-2 px-3 text-xs" />
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-600">Password Akun Siswa *</label>
