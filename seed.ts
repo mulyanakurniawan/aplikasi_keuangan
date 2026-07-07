@@ -19,11 +19,19 @@ const idMap = new Map<string, string>();
 
 async function seed() {
   console.log('Clearing existing data...');
-  // Since we have ON DELETE CASCADE on payments, deleting profiles will delete payments too
+  
+  // First delete all payments explicitly to prevent foreign key violation on dicatat_oleh
+  const { error: delPayError } = await supabase.from('spp_pembayaran').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+  if (delPayError) {
+    console.error('Error clearing payments:', delPayError);
+    return;
+  }
+
+  // Then delete profiles
   const { error: delError } = await supabase.from('profiles').delete().neq('id', '00000000-0000-0000-0000-000000000000');
   
   if (delError) {
-    console.error('Error clearing data:', delError);
+    console.error('Error clearing profiles:', delError);
     return;
   }
 
@@ -68,13 +76,16 @@ async function seed() {
     };
   });
 
-  const { error: pmError } = await supabase.from('spp_pembayaran').insert(paymentsToInsert);
-  if (pmError) {
-    console.error('Error inserting payments:', pmError);
-    return;
+  if (paymentsToInsert.length > 0) {
+    const { error: pmError } = await supabase.from('spp_pembayaran').insert(paymentsToInsert);
+    if (pmError) {
+      console.error('Error inserting payments:', pmError);
+      return;
+    }
+    console.log('Payments inserted successfully.');
+  } else {
+    console.log('No payments to insert (empty student database state).');
   }
-  
-  console.log('Payments inserted successfully.');
   console.log('Seeding completed!');
 }
 

@@ -145,7 +145,7 @@ Wassalamu'alaikum Wr. Wb.`
       triggerToast('Siswa baru berhasil ditambahkan!');
       
       // Tampilkan kredensial kepada Admin
-      alert(`AKUN SISWA BERHASIL DIBUAT!\n\nNIS/Username: ${studentForm.nis}\nPassword: ${generatedPassword}\n\nHarap simpan atau berikan informasi ini kepada siswa yang bersangkutan.`);
+      alert(`AKUN SISWA BERHASIL DIBUAT!\n\nNIS/Username: ${studentForm.nis}\nPassword: ${generatedPassword}\n\nCatatan: Akun ini bersifat "View-Only" (hanya dapat melihat data SPP & cetak kuitansi secara mandiri).\n\nHarap simpan atau berikan informasi ini kepada siswa yang bersangkutan.`);
     }
     setIsStudentModalOpen(false);
   };
@@ -919,6 +919,9 @@ Wassalamu'alaikum Wr. Wb.`
                   <input type="email" value={studentForm.email} onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })} className="w-full border rounded-lg py-2 px-3 text-xs" required />
                 </div>
                 <div className="pt-4 flex justify-end gap-2 border-t mt-4">
+                  <p className="text-[10px] text-slate-500 italic flex-1 self-center">
+                    * Akun siswa bersifat View-Only (hanya membaca data).
+                  </p>
                   <button type="button" onClick={() => setIsStudentModalOpen(false)} className="bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition">Batal</button>
                   <button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold cursor-pointer transition shadow">Simpan</button>
                 </div>

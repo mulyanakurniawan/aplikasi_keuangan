@@ -3,59 +3,11 @@ import { Profile, SppPembayaran, BULAN_LIST } from '../types';
 export const INITIAL_PROFILES: Profile[] = [
   {
     id: 'admin-1',
-    nama: 'Hj. Syarifah Aminah, S.E.',
+    nama: 'Super Admin',
     nis: '-',
     kelas: '-',
     role: 'admin',
     email: 'admin@babussalam.sch.id'
-  },
-  {
-    id: 'admin-dummy',
-    nama: 'Admin Dummy',
-    nis: '-',
-    kelas: '-',
-    role: 'admin',
-    email: 'admin@dummy.com'
-  },
-  {
-    id: 'siswa-1',
-    nama: 'Ahmad Fauzi Al-Anshari',
-    nis: '24001',
-    kelas: 'X-A',
-    role: 'siswa',
-    email: 'ahmad.fauzi@babussalam.sch.id'
-  },
-  {
-    id: 'siswa-2',
-    nama: 'Siti Maryam Az-Zahra',
-    nis: '24002',
-    kelas: 'X-A',
-    role: 'siswa',
-    email: 'siti.maryam@babussalam.sch.id'
-  },
-  {
-    id: 'siswa-3',
-    nama: 'Muhammad Rizqi Pratama',
-    nis: '23015',
-    kelas: 'XI-B',
-    role: 'siswa',
-    email: 'rizqi.pratama@babussalam.sch.id'
-  },
-  {
-    id: 'siswa-4',
-    nama: 'Lailatul Qodriah',
-    nis: '22009',
-    kelas: 'XII-C',
-    role: 'siswa',
-    email: 'lailatul.q@babussalam.sch.id'
-  },
-  {
-    id: 'siswa-5',
-    nama: 'Yusuf Nur Rahman',
-    nis: '22045',
-    kelas: 'XII-C',
-    role: 'siswa',
-    email: 'yusuf.nur@babussalam.sch.id'
   }
 ];
 
