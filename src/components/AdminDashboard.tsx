@@ -9,6 +9,16 @@ import {
 import { Profile, SppPembayaran, BULAN_LIST, BulanType } from '../types';
 import { NOMINAL_SPP } from '../data/mockData';
 import { supabase } from '../lib/supabase';
+const generateUUID = () => {
+  if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
+    return window.crypto.randomUUID();
+  }
+  return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (c) => {
+    const r = Math.random() * 16 | 0;
+    const v = c === 'x' ? r : (r & 0x3 | 0x8);
+    return v.toString(16);
+  });
+};
 
 interface AdminDashboardProps {
   profiles: Profile[];
@@ -71,7 +81,7 @@ Wassalamu'alaikum Wr. Wb.`
 
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Profile | null>(null);
-  const [studentForm, setStudentForm] = useState({ nama: '', nis: '', kelas: '', email: '', password: '' });
+  const [studentForm, setStudentForm] = useState({ nama: '', nis: '', kelas: '', email: '', password: '', no_hp: '' });
 
   // Excel Import States
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -266,7 +276,7 @@ Wassalamu'alaikum Wr. Wb.`
       const newPayments: any[] = [];
       
       importResults.forEach((student) => {
-        const studentId = crypto.randomUUID();
+        const studentId = generateUUID();
         
         newProfiles.push({
           id: studentId,
@@ -354,40 +364,68 @@ Wassalamu'alaikum Wr. Wb.`
 
   const handleSaveStudent = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!studentForm.nama || !studentForm.nis || !studentForm.kelas || !studentForm.email || !studentForm.password) {
-      triggerToast('Harap isi semua kolom wajib!', 'error');
+    if (!studentForm.nama.trim()) {
+      triggerToast('Harap isi Nama Lengkap siswa!', 'error');
       return;
     }
 
     if (editingStudent) {
+      const finalKelas = studentForm.kelas.trim() || 'X-A';
+      const finalEmail = studentForm.email.trim() || (editingStudent.email || `${editingStudent.nis || 'siswa'}@babussalam.sch.id`);
+      const finalPassword = studentForm.password.trim() || (editingStudent.password || `Siswa${editingStudent.nis || ''}`);
+
       const { error } = await supabase.from('profiles').update({
         nama: studentForm.nama,
-        nis: studentForm.nis,
-        kelas: studentForm.kelas,
-        email: studentForm.email,
-        password: studentForm.password,
+        nis: studentForm.nis || editingStudent.nis,
+        kelas: finalKelas,
+        email: finalEmail,
+        password: finalPassword,
         no_hp: studentForm.no_hp || null
       }).eq('id', editingStudent.id);
-      if (error) { triggerToast('Gagal memperbarui!', 'error'); return; }
+      if (error) { 
+        console.error('Update profile error:', error);
+        triggerToast(`Gagal memperbarui: ${error.message}`, 'error'); 
+        return; 
+      }
       onOpenSQL();
       triggerToast('Data siswa berhasil diperbarui!');
     } else {
-      const isNisExists = profiles.some(p => p.nis === studentForm.nis);
-      if (isNisExists) {
-        triggerToast(`NIS ${studentForm.nis} sudah digunakan siswa lain!`, 'error');
-        return;
+      let finalNis = studentForm.nis.trim();
+      if (!finalNis) {
+        let baseUsername = studentForm.nama.toLowerCase().replace(/[^a-z0-9]/g, '');
+        if (!baseUsername) baseUsername = 'siswa';
+        
+        let counter = 1;
+        finalNis = baseUsername;
+        const isNisTaken = (username: string) => {
+          return profiles.some(p => p.nis === username);
+        };
+        while (isNisTaken(finalNis)) {
+          counter++;
+          finalNis = `${baseUsername}${counter}`;
+        }
+      } else {
+        const isNisExists = profiles.some(p => p.nis === finalNis);
+        if (isNisExists) {
+          triggerToast(`NIS ${finalNis} sudah digunakan siswa lain!`, 'error');
+          return;
+        }
       }
       
-      const newSiswaId = crypto.randomUUID();
+      const finalKelas = studentForm.kelas || 'X-A';
+      const finalEmail = studentForm.email.trim() || `${finalNis}@babussalam.sch.id`;
+      const finalPassword = studentForm.password.trim() || `Siswa${finalNis}`;
+      
+      const newSiswaId = generateUUID();
       
       const newProfile = { 
         id: newSiswaId, 
         role: 'siswa', 
         nama: studentForm.nama,
-        nis: studentForm.nis,
-        kelas: studentForm.kelas,
-        email: studentForm.email,
-        password: studentForm.password,
+        nis: finalNis,
+        kelas: finalKelas,
+        email: finalEmail,
+        password: finalPassword,
         no_hp: studentForm.no_hp || null
       };
       const newSppRecords = BULAN_LIST.map((bulan) => ({
@@ -396,17 +434,25 @@ Wassalamu'alaikum Wr. Wb.`
       }));
       
       const { error: pError } = await supabase.from('profiles').insert([newProfile]);
-      if (pError) { triggerToast('Gagal menambah siswa ke profiles', 'error'); return; }
+      if (pError) { 
+        console.error('Insert profile error:', pError);
+        triggerToast(`Gagal menambah siswa ke profiles: ${pError.message}`, 'error'); 
+        return; 
+      }
       
       const { error: sError } = await supabase.from('spp_pembayaran').insert(newSppRecords);
-      if (sError) { triggerToast('Gagal membuat tagihan SPP', 'error'); return; }
+      if (sError) { 
+        console.error('Insert payments error:', sError);
+        triggerToast(`Gagal membuat tagihan SPP: ${sError.message}`, 'error'); 
+        return; 
+      }
 
       onOpenSQL(); // refresh data
       setSelectedSiswaId(newSiswaId);
       triggerToast('Siswa baru berhasil ditambahkan!');
       
       // Tampilkan kredensial kepada Admin
-      alert(`AKUN SISWA BERHASIL DIBUAT!\n\nNIS/Username: ${studentForm.nis}\nPassword: ${studentForm.password}\n\nCatatan: Akun ini bersifat "View-Only" (hanya dapat melihat data SPP & cetak kuitansi secara mandiri).\n\nHarap simpan atau berikan informasi ini kepada siswa yang bersangkutan.`);
+      alert(`AKUN SISWA BERHASIL DIBUAT!\n\nNIS/Username: ${finalNis}\nPassword: ${finalPassword}\n\nCatatan: Akun ini bersifat "View-Only" (hanya dapat melihat data SPP & cetak kuitansi secara mandiri).\n\nHarap simpan atau berikan informasi ini kepada siswa yang bersangkutan.`);
     }
     setIsStudentModalOpen(false);
   };
@@ -1169,7 +1215,7 @@ Wassalamu'alaikum Wr. Wb.`
                   <input type="text" value={studentForm.nama} onChange={(e) => setStudentForm({ ...studentForm, nama: e.target.value })} className="w-full border rounded-lg py-2 px-3 text-xs" required />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600">NIS *</label>
+                  <label className="text-xs font-bold text-slate-600">NIS (Opsional)</label>
                   <input 
                     type="text" 
                     value={studentForm.nis} 
@@ -1183,13 +1229,13 @@ Wassalamu'alaikum Wr. Wb.`
                     }} 
                     disabled={!!editingStudent} 
                     className="w-full border rounded-lg py-2 px-3 text-xs disabled:bg-slate-100" 
-                    required 
+                    placeholder="Auto-generate jika dikosongkan"
                   />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600">Kelas *</label>
-                  <select value={studentForm.kelas} onChange={(e) => setStudentForm({ ...studentForm, kelas: e.target.value })} className="w-full border rounded-lg py-2 px-3 text-xs" required>
-                    <option value="">Pilih</option>
+                  <label className="text-xs font-bold text-slate-600">Kelas (Opsional)</label>
+                  <select value={studentForm.kelas} onChange={(e) => setStudentForm({ ...studentForm, kelas: e.target.value })} className="w-full border rounded-lg py-2 px-3 text-xs">
+                    <option value="">Pilih / Auto X-A</option>
                     <option value="X-A">X-A</option>
                     <option value="X-B">X-B</option>
                     <option value="XI-A">XI-A</option>
@@ -1199,22 +1245,21 @@ Wassalamu'alaikum Wr. Wb.`
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600">Email Wali Murid *</label>
-                  <input type="email" value={studentForm.email} onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })} className="w-full border rounded-lg py-2 px-3 text-xs" required />
+                  <label className="text-xs font-bold text-slate-600">Email Wali Murid (Opsional)</label>
+                  <input type="email" value={studentForm.email} onChange={(e) => setStudentForm({ ...studentForm, email: e.target.value })} placeholder="nama@domain.com" className="w-full border rounded-lg py-2 px-3 text-xs" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600">No. HP / WhatsApp Wali Murid (Mulai dengan 62)</label>
+                  <label className="text-xs font-bold text-slate-600">No. HP / WhatsApp Wali Murid (Mulai dengan 62 - Opsional)</label>
                   <input type="text" value={studentForm.no_hp} onChange={(e) => setStudentForm({ ...studentForm, no_hp: e.target.value })} placeholder="Contoh: 628123456789" className="w-full border rounded-lg py-2 px-3 text-xs" />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600">Password Akun Siswa *</label>
+                  <label className="text-xs font-bold text-slate-600">Password Akun Siswa (Opsional)</label>
                   <input 
                     type="text" 
                     value={studentForm.password} 
                     onChange={(e) => setStudentForm({ ...studentForm, password: e.target.value })} 
                     className="w-full border rounded-lg py-2 px-3 text-xs" 
                     placeholder="Sandi login murid (default: Siswa[NIS])" 
-                    required 
                   />
                 </div>
                 <div className="pt-4 flex justify-end gap-2 border-t mt-4">
