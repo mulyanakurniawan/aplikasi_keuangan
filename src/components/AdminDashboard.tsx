@@ -450,11 +450,13 @@ Wassalamu'alaikum Wr. Wb.`
       onOpenSQL(); // refresh data
       setSelectedSiswaId(newSiswaId);
       triggerToast('Siswa baru berhasil ditambahkan!');
+      setIsStudentModalOpen(false);
       
       // Tampilkan kredensial kepada Admin
-      alert(`AKUN SISWA BERHASIL DIBUAT!\n\nNIS/Username: ${finalNis}\nPassword: ${finalPassword}\n\nCatatan: Akun ini bersifat "View-Only" (hanya dapat melihat data SPP & cetak kuitansi secara mandiri).\n\nHarap simpan atau berikan informasi ini kepada siswa yang bersangkutan.`);
+      setTimeout(() => {
+        alert(`AKUN SISWA BERHASIL DIBUAT!\n\nNIS/Username: ${finalNis}\nPassword: ${finalPassword}\n\nCatatan: Akun ini bersifat "View-Only" (hanya dapat melihat data SPP & cetak kuitansi secara mandiri).\n\nHarap simpan atau berikan informasi ini kepada siswa yang bersangkutan.`);
+      }, 100);
     }
-    setIsStudentModalOpen(false);
   };
 
   const handleDeleteStudent = async (siswaId: string, nama: string) => {

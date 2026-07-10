@@ -45,8 +45,8 @@ export default function App() {
   const [passwordInput, setPasswordInput] = useState(''); // Simulated auth
   const [errorMessage, setErrorMessage] = useState('');
 
-  const fetchSupabaseData = async () => {
-    setIsLoading(true);
+  const fetchSupabaseData = async (silent = false) => {
+    if (!silent) setIsLoading(true);
     try {
       const { data: pData } = await supabase.from('profiles').select('*');
       if (pData) {
@@ -56,7 +56,9 @@ export default function App() {
           const matched = (pData as Profile[]).find(p => p.email === s.user.email);
           if (matched) {
             setSession({ user: { id: matched.id, email: matched.email, role: matched.role } });
-            setCurrentPath(matched.role === 'admin' ? '/admin/dashboard' : '/siswa/dashboard');
+            if (currentPath === '/login') {
+              setCurrentPath(matched.role === 'admin' ? '/admin/dashboard' : '/siswa/dashboard');
+            }
           }
         }
       }
@@ -66,7 +68,7 @@ export default function App() {
     } catch (e) {
       console.error("Failed to fetch database data:", e);
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
@@ -217,7 +219,7 @@ export default function App() {
         onUpdateProfiles={setProfiles}
         onUpdatePayments={setPayments}
         onLogout={handleLogout}
-        onOpenSQL={fetchSupabaseData} // Reusing onOpenSQL as a refresh trigger for simplicity
+        onOpenSQL={() => fetchSupabaseData(true)} // Reusing onOpenSQL as a refresh trigger for simplicity
       />
     );
   }
