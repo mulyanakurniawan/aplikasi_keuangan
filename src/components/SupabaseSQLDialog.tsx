@@ -13,12 +13,14 @@ CREATE TYPE user_role AS ENUM ('admin', 'siswa');
 
 -- 2. Membuat Tabel Profiles (Data Akun & Siswa)
 CREATE TABLE public.profiles (
-  id UUID REFERENCES auth.users(id) ON DELETE CASCADE PRIMARY KEY,
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   nama VARCHAR(255) NOT NULL,
   nis VARCHAR(50) DEFAULT '-',
   kelas VARCHAR(50) DEFAULT '-',
   role user_role NOT NULL DEFAULT 'siswa',
   email VARCHAR(255) NOT NULL,
+  password VARCHAR(255),
+  no_hp VARCHAR(50),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
 
