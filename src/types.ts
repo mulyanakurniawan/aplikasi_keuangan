@@ -1,4 +1,6 @@
-export type UserRole = 'admin' | 'siswa';
+export type UserRole = 'admin' | 'admin_sd' | 'admin_smp' | 'admin_sma' | 'siswa';
+
+export type JenjangType = 'SD' | 'SMP' | 'SMA';
 
 export interface Profile {
   id: string; // auth.uid()
@@ -6,6 +8,7 @@ export interface Profile {
   nis: string;
   kelas: string;
   role: UserRole;
+  jenjang?: JenjangType;
   email: string;
   password?: string;
   no_hp?: string;

@@ -40,21 +40,41 @@ async function seed() {
     let uuid = crypto.randomUUID();
     if (p.email === 'admin@babussalam.sch.id') {
       uuid = '7c7c1bdd-6ba2-4aab-8ad4-6dc4b3a24927';
+    } else if (p.email === 'admin.sd@babussalam.sch.id') {
+      uuid = '11111111-0000-4000-a000-000000000001';
+    } else if (p.email === 'admin.smp@babussalam.sch.id') {
+      uuid = '22222222-0000-4000-a000-000000000002';
+    } else if (p.email === 'admin.sma@babussalam.sch.id') {
+      uuid = '33333333-0000-4000-a000-000000000003';
     }
     idMap.set(p.id, uuid);
+
+    // Map role to valid Postgres enum ('admin' | 'siswa')
+    const dbRole = p.role.startsWith('admin') ? 'admin' : 'siswa';
+
     return {
       id: uuid,
       nama: p.nama,
       nis: p.nis,
       kelas: p.kelas,
-      role: p.role,
+      role: dbRole,
       email: p.email,
       password: p.role === 'siswa' ? 'password123' : null,
       no_hp: p.no_hp || null
     };
   });
 
-  const { error: pError } = await supabase.from('profiles').insert(profilesToInsert);
+  let { error: pError } = await supabase.from('profiles').insert(profilesToInsert);
+  if (pError && pError.message?.includes('no_hp')) {
+    const withoutNoHp = profilesToInsert.map(p => { const copy = { ...p }; delete (copy as any).no_hp; return copy; });
+    const res = await supabase.from('profiles').insert(withoutNoHp);
+    pError = res.error;
+  }
+  if (pError && pError.message?.includes('password')) {
+    const withoutPass = profilesToInsert.map(p => { const copy = { ...p }; delete (copy as any).password; return copy; });
+    const res = await supabase.from('profiles').insert(withoutPass);
+    pError = res.error;
+  }
   if (pError) {
     console.error('Error inserting profiles:', pError);
     return;

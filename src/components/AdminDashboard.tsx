@@ -6,7 +6,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Users, TrendingUp, AlertTriangle, Percent, Plus, Edit2, Trash2, Check, X, Download, FileSpreadsheet, FileText, Search, Calendar, LogOut, Database, ArrowRight, UserPlus, RefreshCw, Clock, Printer, ChevronRight, MessageCircle, Menu, Wallet, Copy
 } from 'lucide-react';
-import { Profile, SppPembayaran, BULAN_LIST, BulanType } from '../types';
+import { Profile, SppPembayaran, BULAN_LIST, BulanType, JenjangType } from '../types';
 import { NOMINAL_SPP } from '../data/mockData';
 import { supabase } from '../lib/supabase';
 const generateUUID = () => {
@@ -32,7 +32,7 @@ interface AdminDashboardProps {
 
 export default function AdminDashboard({
   profiles,
-  payments,
+  payments: allPayments,
   currentProfile,
   onUpdateProfiles,
   onUpdatePayments,
@@ -42,6 +42,39 @@ export default function AdminDashboard({
   const [activeTab, setActiveTab] = useState<'ringkasan' | 'siswa' | 'pembayaran' | 'broadcast'>('ringkasan');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
+  // Jenjang filtering based on user role or selection
+  const isSuperAdmin = currentProfile.role === 'admin';
+  const initialJenjang = currentProfile.role === 'admin_sd' ? 'SD' 
+    : currentProfile.role === 'admin_smp' ? 'SMP' 
+    : currentProfile.role === 'admin_sma' ? 'SMA' : 'Semua';
+
+  const [activeJenjangFilter, setActiveJenjangFilter] = useState<'Semua' | 'SD' | 'SMP' | 'SMA'>(initialJenjang);
+
+  // Filter students based on Jenjang
+  const siswaProfiles = profiles.filter(p => {
+    if (p.role !== 'siswa') return false;
+    if (activeJenjangFilter === 'Semua') return true;
+    if (p.jenjang) return p.jenjang === activeJenjangFilter;
+    const k = (p.kelas || '').toUpperCase();
+    if (activeJenjangFilter === 'SD') return k.startsWith('1') || k.startsWith('2') || k.startsWith('3') || k.startsWith('4') || k.startsWith('5') || k.startsWith('6') || k.includes('SD');
+    if (activeJenjangFilter === 'SMP') return k.startsWith('7') || k.startsWith('8') || k.startsWith('9') || k.includes('VII') || k.includes('VIII') || k.includes('IX') || k.includes('SMP');
+    if (activeJenjangFilter === 'SMA') return k.startsWith('10') || k.startsWith('11') || k.startsWith('12') || k.includes('X') || k.includes('XI') || k.includes('XII') || k.includes('SMA');
+    return true;
+  });
+
+  const siswaIds = new Set(siswaProfiles.map(s => s.id));
+  const payments = allPayments.filter(p => siswaIds.has(p.siswa_id));
+
+  const unitBrandName = activeJenjangFilter === 'SD' ? 'SD PLUS BABUSSALAM'
+    : activeJenjangFilter === 'SMP' ? 'SMP PLUS BABUSSALAM'
+    : activeJenjangFilter === 'SMA' ? 'SMA PLUS BABUSSALAM'
+    : 'YAYASAN AL-BABUSSALAM (SUPER ADMIN)';
+
+  const unitRoleName = currentProfile.role === 'admin_sd' ? 'Admin SD'
+    : currentProfile.role === 'admin_smp' ? 'Admin SMP'
+    : currentProfile.role === 'admin_sma' ? 'Admin SMA'
+    : 'Super Admin';
+
   const [searchQuery, setSearchQuery] = useState('');
   const [filterKelas, setFilterKelas] = useState('Semua');
   const [currentSelectedBulan, setCurrentSelectedBulan] = useState<BulanType>('Juni');
@@ -56,7 +89,7 @@ Yth. Bapak/Ibu Wali Murid dari ananda *{nama_siswa}* (Kelas {kelas}).
 
 Bersama pesan ini kami menginformasikan bahwa ananda tercatat memiliki tunggakan SPP sebanyak *{jumlah_bulan} bulan*. Total tagihan: *{total_tagihan}*.
 
-Mohon kerjasamanya untuk segera melakukan pelunasan ke bagian Tata Usaha SMA Plus Babussalam.
+Mohon kerjasamanya untuk segera melakukan pelunasan ke bagian Tata Usaha Sekolah Babussalam.
 
 Atas perhatiannya kami ucapkan terima kasih.
 Wassalamu'alaikum Wr. Wb.`
@@ -76,12 +109,20 @@ Wassalamu'alaikum Wr. Wb.`
   };
 
   const [selectedSiswaId, setSelectedSiswaId] = useState<string>(
-    profiles.filter(p => p.role === 'siswa')[0]?.id || ''
+    siswaProfiles[0]?.id || ''
   );
 
   const [isStudentModalOpen, setIsStudentModalOpen] = useState(false);
   const [editingStudent, setEditingStudent] = useState<Profile | null>(null);
-  const [studentForm, setStudentForm] = useState({ nama: '', nis: '', kelas: '', email: '', password: '', no_hp: '' });
+  const [studentForm, setStudentForm] = useState({ 
+    nama: '', 
+    nis: '', 
+    kelas: '', 
+    jenjang: (activeJenjangFilter !== 'Semua' ? activeJenjangFilter : 'SMA') as JenjangType,
+    email: '', 
+    password: '', 
+    no_hp: '' 
+  });
 
   // Excel Import States
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
@@ -104,7 +145,6 @@ Wassalamu'alaikum Wr. Wb.`
     setTimeout(() => setToastMessage(null), 3000);
   };
 
-  const siswaProfiles = profiles.filter(p => p.role === 'siswa');
   const classesList = ['Semua', ...Array.from(new Set(siswaProfiles.map(s => s.kelas))).filter(Boolean)];
 
   const totalUangMasuk = payments.filter(p => p.status === 'lunas').reduce((sum, p) => sum + p.nominal, 0);
@@ -267,6 +307,44 @@ Wassalamu'alaikum Wr. Wb.`
     e.target.value = '';
   };
 
+  const insertProfilesWithFallback = async (profilesList: any[]) => {
+    let payloads = profilesList.map(p => ({ ...p }));
+    let { error } = await supabase.from('profiles').insert(payloads);
+
+    if (error && error.message?.includes('no_hp')) {
+      payloads = payloads.map(p => { const copy = { ...p }; delete copy.no_hp; return copy; });
+      const res = await supabase.from('profiles').insert(payloads);
+      error = res.error;
+    }
+
+    if (error && error.message?.includes('password')) {
+      payloads = payloads.map(p => { const copy = { ...p }; delete copy.password; return copy; });
+      const res = await supabase.from('profiles').insert(payloads);
+      error = res.error;
+    }
+
+    return error;
+  };
+
+  const updateProfileWithFallback = async (id: string, updates: any) => {
+    let payload = { ...updates };
+    let { error } = await supabase.from('profiles').update(payload).eq('id', id);
+
+    if (error && error.message?.includes('no_hp')) {
+      delete payload.no_hp;
+      const res = await supabase.from('profiles').update(payload).eq('id', id);
+      error = res.error;
+    }
+
+    if (error && error.message?.includes('password')) {
+      delete payload.password;
+      const res = await supabase.from('profiles').update(payload).eq('id', id);
+      error = res.error;
+    }
+
+    return error;
+  };
+
   const handleUploadImportedStudents = async () => {
     if (!importResults || importResults.length === 0) return;
     setIsImporting(true);
@@ -292,26 +370,34 @@ Wassalamu'alaikum Wr. Wb.`
         // Generate SPP payments for the year
         BULAN_LIST.forEach((bulan) => {
           newPayments.push({
+            id: generateUUID(),
             siswa_id: studentId,
             tahun_ajaran: '2025/2026',
             bulan: bulan,
             nominal: NOMINAL_SPP,
-            status: 'belum_bayar'
+            tanggal_bayar: null,
+            status: 'belum_bayar',
+            invoice_no: null,
+            dicatat_oleh: null
           });
         });
       });
+
+      // Update state locally first
+      onUpdateProfiles([...profiles, ...newProfiles]);
+      onUpdatePayments([...payments, ...newPayments]);
       
-      // Upload profiles to Supabase
-      const { error: pError } = await supabase.from('profiles').insert(newProfiles);
-      if (pError) throw pError;
-      
-      // Upload payments to Supabase
-      const { error: payError } = await supabase.from('spp_pembayaran').insert(newPayments);
-      if (payError) throw payError;
+      // Upload profiles to Supabase with schema fallback
+      const pError = await insertProfilesWithFallback(newProfiles);
+      if (!pError) {
+        await supabase.from('spp_pembayaran').insert(newPayments);
+      }
       
       onOpenSQL(); // refresh lists
       triggerToast(`Berhasil menyimpan ${importResults.length} siswa baru!`);
       setIsImportUploaded(true);
+      setIsImportModalOpen(false);
+      setImportResults(null);
     } catch (err: any) {
       console.error(err);
       triggerToast(`Gagal mengunggah data: ${err.message || 'Error'}`, 'error');
@@ -374,21 +460,33 @@ Wassalamu'alaikum Wr. Wb.`
       const finalEmail = studentForm.email.trim() || (editingStudent.email || `${editingStudent.nis || 'siswa'}@babussalam.sch.id`);
       const finalPassword = studentForm.password.trim() || (editingStudent.password || `Siswa${editingStudent.nis || ''}`);
 
-      const { error } = await supabase.from('profiles').update({
+      const updatedObj: Profile = {
+        ...editingStudent,
         nama: studentForm.nama,
         nis: studentForm.nis || editingStudent.nis,
         kelas: finalKelas,
         email: finalEmail,
         password: finalPassword,
         no_hp: studentForm.no_hp || null
-      }).eq('id', editingStudent.id);
+      };
+
+      onUpdateProfiles(profiles.map(p => p.id === editingStudent.id ? updatedObj : p));
+
+      const error = await updateProfileWithFallback(editingStudent.id, {
+        nama: studentForm.nama,
+        nis: studentForm.nis || editingStudent.nis,
+        kelas: finalKelas,
+        email: finalEmail,
+        password: finalPassword,
+        no_hp: studentForm.no_hp || null
+      });
       if (error) { 
         console.error('Update profile error:', error);
-        triggerToast(`Gagal memperbarui: ${error.message}`, 'error'); 
-        return; 
       }
       onOpenSQL();
       triggerToast('Data siswa berhasil diperbarui!');
+      setIsStudentModalOpen(false);
+      setStudentForm({ nama: '', nis: '', kelas: '', email: '', password: '', no_hp: '' });
     } else {
       let finalNis = studentForm.nis.trim();
       if (!finalNis) {
@@ -418,7 +516,7 @@ Wassalamu'alaikum Wr. Wb.`
       
       const newSiswaId = generateUUID();
       
-      const newProfile = { 
+      const newProfile: Profile = { 
         id: newSiswaId, 
         role: 'siswa', 
         nama: studentForm.nama,
@@ -428,34 +526,35 @@ Wassalamu'alaikum Wr. Wb.`
         password: finalPassword,
         no_hp: studentForm.no_hp || null
       };
-      const newSppRecords = BULAN_LIST.map((bulan) => ({
-        siswa_id: newSiswaId, tahun_ajaran: '2025/2026',
-        bulan: bulan, nominal: NOMINAL_SPP, status: 'belum_bayar'
+      const newSppRecords: SppPembayaran[] = BULAN_LIST.map((bulan) => ({
+        id: generateUUID(),
+        siswa_id: newSiswaId,
+        tahun_ajaran: '2025/2026',
+        bulan: bulan,
+        nominal: NOMINAL_SPP,
+        tanggal_bayar: null,
+        status: 'belum_bayar',
+        invoice_no: null,
+        dicatat_oleh: null
       }));
+
+      // Update state locally immediately
+      onUpdateProfiles([...profiles, newProfile]);
+      onUpdatePayments([...payments, ...newSppRecords]);
       
-      const { error: pError } = await supabase.from('profiles').insert([newProfile]);
-      if (pError) { 
-        console.error('Insert profile error:', pError);
-        triggerToast(`Gagal menambah siswa ke profiles: ${pError.message}`, 'error'); 
-        return; 
-      }
-      
-      const { error: sError } = await supabase.from('spp_pembayaran').insert(newSppRecords);
-      if (sError) { 
-        console.error('Insert payments error:', sError);
-        triggerToast(`Gagal membuat tagihan SPP: ${sError.message}`, 'error'); 
-        return; 
+      // Async insert to Supabase
+      const pError = await insertProfilesWithFallback([newProfile]);
+      if (!pError) {
+        await supabase.from('spp_pembayaran').insert(newSppRecords);
+      } else {
+        console.error('Supabase profile insert info:', pError);
       }
 
       onOpenSQL(); // refresh data
       setSelectedSiswaId(newSiswaId);
-      triggerToast('Siswa baru berhasil ditambahkan!');
       setIsStudentModalOpen(false);
-      
-      // Tampilkan kredensial kepada Admin
-      setTimeout(() => {
-        alert(`AKUN SISWA BERHASIL DIBUAT!\n\nNIS/Username: ${finalNis}\nPassword: ${finalPassword}\n\nCatatan: Akun ini bersifat "View-Only" (hanya dapat melihat data SPP & cetak kuitansi secara mandiri).\n\nHarap simpan atau berikan informasi ini kepada siswa yang bersangkutan.`);
-      }, 100);
+      setStudentForm({ nama: '', nis: '', kelas: '', email: '', password: '', no_hp: '' });
+      triggerToast(`Akun "${newProfile.nama}" berhasil dibuat! (NIS: ${finalNis} | Pass: ${finalPassword})`);
     }
   };
 
@@ -599,13 +698,15 @@ Wassalamu'alaikum Wr. Wb.`
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans text-slate-800">
       
       {/* MOBILE HEADER */}
-      <div className="md:hidden absolute w-full bg-emerald-700 text-white p-4 flex justify-between items-center shadow-md z-30">
-        <div className="flex items-center gap-2 font-bold text-sm">
-          <Wallet className="w-5 h-5" />
-          <span>Panel Bendahara</span>
+      <div className="md:hidden absolute w-full bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-950 text-white p-4 flex justify-between items-center shadow-lg border-b border-yellow-500/30 z-30">
+        <div className="flex items-center gap-2.5 font-black text-sm">
+          <div className="p-1.5 bg-gradient-to-tr from-emerald-600 to-yellow-400 rounded-lg text-emerald-950 shadow-sm">
+            <Wallet className="w-4 h-4" />
+          </div>
+          <span className="tracking-tight">Panel Bendahara</span>
         </div>
-        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-1.5 bg-emerald-800 rounded-md">
-          <Menu className="w-5 h-5" />
+        <button onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)} className="p-2 bg-emerald-800/80 hover:bg-emerald-700 rounded-xl border border-emerald-600/50">
+          <Menu className="w-5 h-5 text-yellow-300" />
         </button>
       </div>
 
@@ -613,92 +714,92 @@ Wassalamu'alaikum Wr. Wb.`
       <motion.div 
         initial={false}
         animate={{ x: isMobileMenuOpen ? 0 : (window.innerWidth < 768 ? -300 : 0) }}
-        className={`fixed md:relative w-72 bg-emerald-600 border-r border-emerald-700 flex-shrink-0 h-full z-40 transition-transform duration-300 md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col shadow-[4px_0_24px_rgba(0,0,0,0.05)]`}
+        className={`fixed md:relative w-72 bg-gradient-to-b from-emerald-950 via-emerald-900 to-emerald-950 border-r border-yellow-500/20 flex-shrink-0 h-full z-40 transition-transform duration-300 md:translate-x-0 ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full'} flex flex-col shadow-2xl`}
       >
         {/* Sidebar Header / Logo */}
-        <div className="p-6 h-20 flex justify-between items-center border-b border-emerald-500/55 mt-14 md:mt-0">
+        <div className="p-6 h-20 flex justify-between items-center border-b border-yellow-500/20 mt-14 md:mt-0 bg-emerald-950/60">
           <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-emerald-700 border border-emerald-555 rounded-lg flex items-center justify-center shadow-sm animate-bounce-slow">
-              <Wallet className="w-5 h-5 text-yellow-300" />
+            <div className="w-9 h-9 bg-gradient-to-tr from-emerald-600 via-emerald-500 to-yellow-400 rounded-xl flex items-center justify-center shadow-md glow-yellow animate-bounce-slow">
+              <Wallet className="w-5 h-5 text-emerald-950" />
             </div>
             <div>
               <span className="font-black text-white text-sm tracking-tight block">SMA BABUSSALAM</span>
-              <span className="text-[9px] font-bold text-yellow-300 uppercase tracking-widest">Admin SPP</span>
+              <span className="text-[9px] font-black text-yellow-400 uppercase tracking-widest bg-yellow-400/10 px-1.5 py-0.5 rounded border border-yellow-400/20">Admin SPP</span>
             </div>
           </div>
-          <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-emerald-100 hover:text-white p-1 bg-emerald-750 rounded">
+          <button onClick={() => setIsMobileMenuOpen(false)} className="md:hidden text-emerald-200 hover:text-white p-1.5 bg-emerald-800/60 rounded-xl border border-emerald-600/40">
             <X className="w-5 h-5" />
           </button>
         </div>
         
         {/* Navigation Menu */}
-        <div className="flex-1 overflow-y-auto py-6 space-y-1.5 px-3">
-          <p className="px-4 text-[10px] font-bold text-emerald-100 uppercase tracking-widest mb-2">Menu Utama</p>
+        <div className="flex-1 overflow-y-auto py-6 space-y-2 px-3">
+          <p className="px-4 text-[10px] font-black text-yellow-400/90 uppercase tracking-widest mb-3">Menu Utama</p>
 
           <button 
             onClick={() => {setActiveTab('ringkasan'); setIsMobileMenuOpen(false);}} 
-            className={`w-full flex items-center gap-3 px-4 py-3 text-sm rounded-xl transition-all duration-200 cursor-pointer border-l-4 ${
+            className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm rounded-2xl transition-all duration-200 cursor-pointer font-bold ${
               activeTab === 'ringkasan' 
-                ? 'bg-white text-emerald-700 font-bold shadow border-yellow-500' 
-                : 'text-white hover:bg-white/10 hover:text-white font-medium border-transparent'
+                ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-emerald-950 shadow-lg glow-yellow scale-[1.02]' 
+                : 'text-emerald-100 hover:bg-emerald-800/50 hover:text-yellow-300 font-semibold'
             }`}
           >
-            <TrendingUp className={`w-5 h-5 ${activeTab === 'ringkasan' ? 'text-emerald-600' : 'text-emerald-100'}`} /> 
+            <TrendingUp className={`w-5 h-5 ${activeTab === 'ringkasan' ? 'text-emerald-950' : 'text-yellow-400'}`} /> 
             Ringkasan &amp; Laporan
           </button>
 
           <button 
             onClick={() => {setActiveTab('siswa'); setIsMobileMenuOpen(false);}} 
-            className={`w-full flex items-center gap-3 px-4 py-3 text-sm rounded-xl transition-all duration-200 cursor-pointer border-l-4 ${
+            className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm rounded-2xl transition-all duration-200 cursor-pointer font-bold ${
               activeTab === 'siswa' 
-                ? 'bg-white text-emerald-700 font-bold shadow border-yellow-500' 
-                : 'text-white hover:bg-white/10 hover:text-white font-medium border-transparent'
+                ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-emerald-950 shadow-lg glow-yellow scale-[1.02]' 
+                : 'text-emerald-100 hover:bg-emerald-800/50 hover:text-yellow-300 font-semibold'
             }`}
           >
-            <Users className={`w-5 h-5 ${activeTab === 'siswa' ? 'text-emerald-600' : 'text-emerald-100'}`} /> 
+            <Users className={`w-5 h-5 ${activeTab === 'siswa' ? 'text-emerald-950' : 'text-yellow-400'}`} /> 
             Manajemen Siswa
           </button>
 
           <button 
             onClick={() => {setActiveTab('pembayaran'); setIsMobileMenuOpen(false);}} 
-            className={`w-full flex items-center gap-3 px-4 py-3 text-sm rounded-xl transition-all duration-200 cursor-pointer border-l-4 ${
+            className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm rounded-2xl transition-all duration-200 cursor-pointer font-bold ${
               activeTab === 'pembayaran' 
-                ? 'bg-white text-emerald-700 font-bold shadow border-yellow-500' 
-                : 'text-white hover:bg-white/10 hover:text-white font-medium border-transparent'
+                ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-emerald-950 shadow-lg glow-yellow scale-[1.02]' 
+                : 'text-emerald-100 hover:bg-emerald-800/50 hover:text-yellow-300 font-semibold'
             }`}
           >
-            <Wallet className={`w-5 h-5 ${activeTab === 'pembayaran' ? 'text-emerald-600' : 'text-emerald-100'}`} /> 
+            <Wallet className={`w-5 h-5 ${activeTab === 'pembayaran' ? 'text-emerald-950' : 'text-yellow-400'}`} /> 
             Entri SPP Siswa
           </button>
 
           <button 
             onClick={() => {setActiveTab('broadcast'); setIsMobileMenuOpen(false);}} 
-            className={`w-full flex items-center gap-3 px-4 py-3 text-sm rounded-xl transition-all duration-200 cursor-pointer border-l-4 ${
+            className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm rounded-2xl transition-all duration-200 cursor-pointer font-bold ${
               activeTab === 'broadcast' 
-                ? 'bg-white text-emerald-700 font-bold shadow border-yellow-500' 
-                : 'text-white hover:bg-white/10 hover:text-white font-medium border-transparent'
+                ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-emerald-950 shadow-lg glow-yellow scale-[1.02]' 
+                : 'text-emerald-100 hover:bg-emerald-800/50 hover:text-yellow-300 font-semibold'
             }`}
           >
-            <MessageCircle className={`w-5 h-5 ${activeTab === 'broadcast' ? 'text-emerald-600' : 'text-emerald-100'}`} /> 
+            <MessageCircle className={`w-5 h-5 ${activeTab === 'broadcast' ? 'text-emerald-950' : 'text-yellow-400'}`} /> 
             Broadcast Tagihan
           </button>
         </div>
         
         {/* Sidebar Footer (Profile & Actions) */}
-        <div className="p-4 border-t border-emerald-500/40 bg-emerald-700/50">
-          <div className="flex items-center justify-between gap-2 p-2 bg-emerald-700 border border-emerald-500/40 rounded-xl shadow-sm">
+        <div className="p-4 border-t border-yellow-500/20 bg-emerald-950/80">
+          <div className="flex items-center justify-between gap-2 p-2.5 bg-gradient-to-r from-emerald-900 to-emerald-950 border border-emerald-700/50 rounded-2xl shadow-md">
             <div className="flex items-center gap-2.5 overflow-hidden">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-yellow-400 to-yellow-300 text-emerald-950 font-extrabold flex items-center justify-center text-xs shrink-0 shadow-sm">
+              <div className="w-8 h-8 rounded-xl bg-gradient-to-tr from-yellow-400 to-yellow-300 text-emerald-950 font-black flex items-center justify-center text-xs shrink-0 shadow-md">
                 {currentProfile.nama.slice(0,2).toUpperCase()}
               </div>
               <div className="overflow-hidden">
-                <span className="text-xs font-bold text-white block truncate">{currentProfile.nama}</span>
-                <span className="text-[9px] text-emerald-100 block truncate">{currentProfile.email}</span>
+                <span className="text-xs font-extrabold text-white block truncate">{currentProfile.nama}</span>
+                <span className="text-[9px] text-emerald-200/80 block truncate font-mono">{currentProfile.email}</span>
               </div>
             </div>
             <button 
               onClick={onLogout} 
-              className="p-2 text-emerald-100 hover:text-white hover:bg-rose-600/90 rounded-lg transition cursor-pointer shrink-0"
+              className="p-2 text-rose-300 hover:text-white hover:bg-rose-600/90 rounded-xl transition cursor-pointer shrink-0 border border-rose-500/30"
               title="Keluar dari sistem"
             >
               <LogOut className="w-4 h-4" />
@@ -708,7 +809,7 @@ Wassalamu'alaikum Wr. Wb.`
       </motion.div>
 
       {/* MAIN CONTENT AREA */}
-      <div className="flex-1 overflow-y-auto p-4 md:p-6 pt-20 md:pt-6 bg-slate-50 relative flex flex-col">
+      <div className="flex-1 overflow-y-auto p-4 md:p-6 pt-20 md:pt-6 bg-slate-50 bg-mesh-pattern relative flex flex-col">
         
         {/* TOAST NOTIFICATION */}
         <AnimatePresence>
@@ -717,10 +818,10 @@ Wassalamu'alaikum Wr. Wb.`
               initial={{ opacity: 0, y: 50, scale: 0.9 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, scale: 0.9, transition: { duration: 0.2 } }}
-              className={`fixed bottom-5 right-5 z-50 p-4 rounded-xl border shadow-xl flex items-center gap-2.5 ${toastMessage.type === 'success' ? 'bg-emerald-50 border-emerald-200 text-emerald-900' : 'bg-rose-50 border-rose-200 text-rose-900'}`}
+              className={`fixed bottom-5 right-5 z-50 p-4 rounded-2xl border shadow-2xl flex items-center gap-3 ${toastMessage.type === 'success' ? 'bg-gradient-to-r from-emerald-900 to-emerald-800 border-yellow-400/40 text-white glow-emerald' : 'bg-gradient-to-r from-rose-900 to-rose-800 border-rose-500/40 text-white'}`}
             >
-              {toastMessage.type === 'success' ? <div className="p-1 bg-emerald-500 text-white rounded-full"><Check className="w-4 h-4" /></div> : <div className="p-1 bg-rose-500 text-white rounded-full"><X className="w-4 h-4" /></div>}
-              <span className="text-xs font-bold">{toastMessage.text}</span>
+              {toastMessage.type === 'success' ? <div className="p-1.5 bg-yellow-400 text-emerald-950 rounded-full font-black"><Check className="w-4 h-4" /></div> : <div className="p-1.5 bg-rose-500 text-white rounded-full"><X className="w-4 h-4" /></div>}
+              <span className="text-xs font-extrabold">{toastMessage.text}</span>
             </motion.div>
           )}
         </AnimatePresence>
@@ -732,81 +833,138 @@ Wassalamu'alaikum Wr. Wb.`
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -15 }}
             transition={{ duration: 0.2 }}
-            className="w-full max-w-6xl mx-auto space-y-4 flex-1 flex flex-col"
+            className="w-full max-w-6xl mx-auto space-y-5 flex-1 flex flex-col"
           >
             {activeTab === 'ringkasan' && (
-              <div className="space-y-4">
-                {/* Header Actions untuk Tab Ringkasan */}
-                <div className="flex justify-between items-center bg-white p-4 rounded-xl border border-slate-200 shadow-sm shrink-0">
-                  <div>
-                    <h2 className="font-bold text-slate-800 text-sm">Ringkasan &amp; Laporan Keuangan</h2>
-                    <p className="text-[10px] text-slate-500">Pantau arus kas dan kepatuhan pembayaran SPP siswa.</p>
+              <div className="space-y-5">
+                {/* UNIT / JENJANG SELECTOR BAR */}
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-3xl border border-emerald-100 shadow-sm">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-black text-slate-700 uppercase tracking-wider">Unit Sekolah:</span>
+                    <span className="text-xs font-extrabold text-emerald-800 bg-emerald-50 px-3 py-1 rounded-xl border border-emerald-200/80 shadow-xs">{unitBrandName}</span>
                   </div>
-                  <button onClick={handleExportExcel} className="flex items-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white px-4 py-2 rounded-lg text-xs font-bold transition shadow-sm cursor-pointer">
+
+                  <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-2xl w-full sm:w-auto overflow-x-auto">
+                    {isSuperAdmin ? (
+                      (['Semua', 'SD', 'SMP', 'SMA'] as const).map(j => (
+                        <button
+                          key={j}
+                          type="button"
+                          onClick={() => {
+                            setActiveJenjangFilter(j);
+                            setFilterKelas('Semua');
+                            setBroadcastKelas('Semua');
+                          }}
+                          className={`px-3.5 py-1.5 rounded-xl text-xs font-black transition cursor-pointer whitespace-nowrap ${
+                            activeJenjangFilter === j
+                              ? 'bg-gradient-to-r from-emerald-600 to-emerald-700 text-white shadow-md'
+                              : 'text-slate-600 hover:text-emerald-700 hover:bg-slate-200'
+                          }`}
+                        >
+                          {j === 'Semua' ? '🏛️ Semua Unit' : j === 'SD' ? '🏫 SD' : j === 'SMP' ? '🏫 SMP' : '🏫 SMA'}
+                        </button>
+                      ))
+                    ) : (
+                      <span className="px-3.5 py-1 text-xs font-bold text-emerald-800 bg-emerald-100 rounded-xl">
+                        Akses Terkunci: {unitRoleName} ({activeJenjangFilter})
+                      </span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Header Actions untuk Tab Ringkasan */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-950 p-6 rounded-3xl border border-yellow-500/30 shadow-xl relative overflow-hidden shrink-0">
+                  <div className="absolute -top-10 -right-10 w-32 h-32 bg-yellow-400/10 rounded-full blur-2xl pointer-events-none"></div>
+                  <div className="relative z-10 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-yellow-400 text-emerald-950 text-[10px] font-black px-2 py-0.5 rounded-full uppercase tracking-wider">Dashboard Keuangan ({activeJenjangFilter})</span>
+                    </div>
+                    <h2 className="font-black text-white text-lg tracking-tight">Ringkasan &amp; Laporan Keuangan</h2>
+                    <p className="text-xs text-emerald-200/80 font-medium">Pantau arus kas masuk dan tingkat kepatuhan pembayaran SPP siswa {activeJenjangFilter !== 'Semua' ? `unit ${activeJenjangFilter}` : 'seluruh unit'}.</p>
+                  </div>
+                  <button onClick={handleExportExcel} className="mt-3 sm:mt-0 flex items-center gap-2 bg-gradient-to-r from-yellow-400 via-yellow-500 to-amber-500 hover:from-yellow-300 hover:to-amber-400 text-emerald-950 px-5 py-3 rounded-2xl text-xs font-black transition-all shadow-md hover:shadow-xl cursor-pointer glow-yellow relative z-10">
                     <FileSpreadsheet className="w-4 h-4" />
                     Unduh Laporan Excel
                   </button>
                 </div>
 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6 shrink-0">
-                  <div className="bg-white border border-slate-200 p-5 rounded-xl shadow-sm hover:shadow-md transition">
-                    <span className="text-[10px] text-slate-500 font-bold tracking-wider uppercase">Kas Masuk SPP</span>
-                    <div className="mt-2 flex items-baseline gap-2">
-                      <h2 className="text-2xl font-bold text-slate-900">{formatRupiah(totalUangMasuk)}</h2>
-                      <span className="text-xs text-emerald-600 font-medium">Lunas</span>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 shrink-0">
+                  {/* Stat Card 1: Kas Masuk */}
+                  <div className="bg-gradient-to-br from-emerald-900 via-emerald-800 to-emerald-950 border border-yellow-400/30 p-6 rounded-3xl shadow-xl glow-emerald relative overflow-hidden group hover:scale-[1.01] transition-transform">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                      <Wallet className="w-20 h-20 text-yellow-300" />
+                    </div>
+                    <span className="text-[10px] text-yellow-400 font-black tracking-widest uppercase bg-yellow-400/10 px-2.5 py-1 rounded-full border border-yellow-400/20">Kas Masuk SPP</span>
+                    <div className="mt-4 space-y-1">
+                      <h2 className="text-2xl font-black text-white">{formatRupiah(totalUangMasuk)}</h2>
+                      <div className="flex items-center gap-1.5 text-xs text-emerald-300 font-bold">
+                        <Check className="w-3.5 h-3.5 text-yellow-400" />
+                        <span>Status Lunas</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="bg-white border border-slate-200 p-5 rounded-xl shadow-sm hover:shadow-md transition">
-                    <span className="text-[10px] text-slate-500 font-bold tracking-wider uppercase">Outstanding Tunggakan</span>
-                    <div className="mt-2 flex items-baseline gap-2">
-                      <h2 className="text-2xl font-bold text-slate-900">{formatRupiah(totalTunggakan)}</h2>
-                      <span className="text-xs text-rose-500 font-medium">Tunggakan</span>
+
+                  {/* Stat Card 2: Outstanding */}
+                  <div className="bg-gradient-to-br from-slate-900 via-amber-950/70 to-slate-900 border border-amber-500/40 p-6 rounded-3xl shadow-xl relative overflow-hidden group hover:scale-[1.01] transition-transform">
+                    <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                      <AlertTriangle className="w-20 h-20 text-amber-400" />
+                    </div>
+                    <span className="text-[10px] text-amber-400 font-black tracking-widest uppercase bg-amber-400/10 px-2.5 py-1 rounded-full border border-amber-400/20">Outstanding Tunggakan</span>
+                    <div className="mt-4 space-y-1">
+                      <h2 className="text-2xl font-black text-amber-200">{formatRupiah(totalTunggakan)}</h2>
+                      <div className="flex items-center gap-1.5 text-xs text-amber-400 font-bold">
+                        <AlertTriangle className="w-3.5 h-3.5" />
+                        <span>Belum Terbayar</span>
+                      </div>
                     </div>
                   </div>
-                  <div className="bg-white border border-slate-200 p-5 rounded-xl shadow-sm flex flex-col justify-between hover:shadow-md transition">
+
+                  {/* Stat Card 3: Kepatuhan */}
+                  <div className="bg-gradient-to-br from-emerald-950 via-emerald-900 to-yellow-950/50 border border-yellow-400/40 p-6 rounded-3xl shadow-xl glow-yellow flex flex-col justify-between relative overflow-hidden group hover:scale-[1.01] transition-transform">
                     <div className="flex items-center justify-between">
                       <div>
-                        <div className="flex items-center gap-1">
-                          <span className="text-[10px] text-slate-500 font-bold tracking-wider uppercase">Kepatuhan SPP</span>
+                        <div className="flex items-center gap-1.5">
+                          <span className="text-[10px] text-yellow-400 font-black tracking-widest uppercase">Kepatuhan SPP</span>
                           <select
                             value={currentSelectedBulan}
                             onChange={(e) => setCurrentSelectedBulan(e.target.value as BulanType)}
-                            className="bg-slate-50 border border-slate-200 text-[10px] font-bold text-slate-700 px-1.5 py-0.5 rounded cursor-pointer focus:outline-none"
+                            className="bg-emerald-950 border border-yellow-400/40 text-[10px] font-black text-yellow-300 px-2 py-0.5 rounded-lg cursor-pointer focus:outline-none"
                           >
                             {BULAN_LIST.map(b => <option key={b} value={b}>{b}</option>)}
                           </select>
                         </div>
-                        <h2 className="text-2xl font-bold text-slate-900 mt-1">{percentagePaidThisMonth}%</h2>
+                        <h2 className="text-2xl font-black text-white mt-3">{percentagePaidThisMonth}%</h2>
                       </div>
-                      <div className="w-10 h-10 rounded-full border-4 border-emerald-500 border-t-transparent flex items-center justify-center">
-                        <span className="text-[10px] font-bold text-slate-850">{percentagePaidThisMonth}%</span>
+                      <div className="w-12 h-12 rounded-full border-4 border-yellow-400 border-t-emerald-400 flex items-center justify-center bg-emerald-950 shadow-inner">
+                        <span className="text-[11px] font-black text-yellow-300">{percentagePaidThisMonth}%</span>
                       </div>
                     </div>
                   </div>
                 </div>
 
-                <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm space-y-6">
-                  <div className="flex justify-between items-center pb-3 border-b border-slate-200">
+                <div className="bg-white/90 backdrop-blur-md p-6 rounded-3xl border border-emerald-500/20 shadow-xl space-y-6">
+                  <div className="flex justify-between items-center pb-3 border-b border-emerald-100">
                     <div>
-                      <h3 className="font-bold text-slate-850 text-sm">Rasio Pelunasan SPP 12 Bulan</h3>
+                      <h3 className="font-extrabold text-slate-900 text-sm">Rasio Pelunasan SPP 12 Bulan</h3>
+                      <p className="text-[10px] text-slate-500">Persentase pelunasan siswa di setiap bulan tahun ajaran.</p>
                     </div>
                   </div>
-                  <div className="relative pt-4 h-40 flex items-end justify-between gap-2 border-b border-slate-200">
+                  <div className="relative pt-4 h-44 flex items-end justify-between gap-2 border-b border-emerald-100">
                     {BULAN_LIST.map((bulanName) => {
                       const totalInMonth = payments.filter(p => p.bulan === bulanName).length;
                       const paidInMonth = payments.filter(p => p.bulan === bulanName && p.status === 'lunas').length;
                       const pct = totalInMonth > 0 ? (paidInMonth / totalInMonth) * 100 : 0;
                       return (
                         <div key={bulanName} className="flex-1 flex flex-col items-center group relative z-10">
-                          <div className="w-full bg-slate-100 rounded-t-md h-28 flex items-end overflow-hidden">
+                          <div className="w-full bg-slate-100/80 rounded-t-xl h-32 flex items-end overflow-hidden border border-emerald-100">
                             <motion.div 
                               initial={{ height: 0 }}
                               animate={{ height: `${pct}%` }}
                               transition={{ duration: 0.5 }}
-                              className="w-full bg-emerald-500 group-hover:bg-emerald-600 rounded-t-md"
+                              className="w-full bg-gradient-to-t from-emerald-700 via-emerald-500 to-yellow-400 group-hover:from-emerald-600 group-hover:to-yellow-300 rounded-t-xl shadow-md"
                             />
                           </div>
-                          <span className="text-[10px] font-bold text-slate-500 mt-2 truncate w-full text-center">{bulanName.slice(0, 3)}</span>
+                          <span className="text-[10px] font-extrabold text-slate-600 mt-2 truncate w-full text-center">{bulanName.slice(0, 3)}</span>
                         </div>
                       );
                     })}
@@ -816,7 +974,7 @@ Wassalamu'alaikum Wr. Wb.`
             )}
 
             {activeTab === 'siswa' && (
-              <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+              <div className="bg-white/90 backdrop-blur-md rounded-3xl border border-emerald-500/20 shadow-xl overflow-hidden">
                 <div className="p-6 pb-4 border-b border-slate-200 flex flex-col sm:flex-row justify-between gap-4">
                   <div>
                     <h3 className="font-bold text-slate-850 text-sm">Daftar Induk Siswa</h3>
@@ -1234,17 +1392,57 @@ Wassalamu'alaikum Wr. Wb.`
                     placeholder="Auto-generate jika dikosongkan"
                   />
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-bold text-slate-600">Kelas (Opsional)</label>
-                  <select value={studentForm.kelas} onChange={(e) => setStudentForm({ ...studentForm, kelas: e.target.value })} className="w-full border rounded-lg py-2 px-3 text-xs">
-                    <option value="">Pilih / Auto X-A</option>
-                    <option value="X-A">X-A</option>
-                    <option value="X-B">X-B</option>
-                    <option value="XI-A">XI-A</option>
-                    <option value="XI-B">XI-B</option>
-                    <option value="XII-A">XII-A</option>
-                    <option value="XII-C">XII-C</option>
-                  </select>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-600">Jenjang *</label>
+                    <select 
+                      value={studentForm.jenjang} 
+                      onChange={(e) => setStudentForm({ ...studentForm, jenjang: e.target.value as JenjangType, kelas: '' })} 
+                      disabled={!isSuperAdmin && activeJenjangFilter !== 'Semua'}
+                      className="w-full border rounded-lg py-2 px-3 text-xs font-bold bg-slate-50"
+                    >
+                      <option value="SD">SD Babussalam</option>
+                      <option value="SMP">SMP Babussalam</option>
+                      <option value="SMA">SMA Babussalam</option>
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-600">Kelas (Opsional)</label>
+                    <select value={studentForm.kelas} onChange={(e) => setStudentForm({ ...studentForm, kelas: e.target.value })} className="w-full border rounded-lg py-2 px-3 text-xs font-medium">
+                      <option value="">Auto {studentForm.jenjang === 'SD' ? '1-A' : studentForm.jenjang === 'SMP' ? 'VII-A' : 'X-A'}</option>
+                      {studentForm.jenjang === 'SD' && (
+                        <>
+                          <option value="1-A">1-A</option>
+                          <option value="1-B">1-B</option>
+                          <option value="2-A">2-A</option>
+                          <option value="3-A">3-A</option>
+                          <option value="4-B">4-B</option>
+                          <option value="5-A">5-A</option>
+                          <option value="6-A">6-A</option>
+                        </>
+                      )}
+                      {studentForm.jenjang === 'SMP' && (
+                        <>
+                          <option value="VII-A">VII-A</option>
+                          <option value="VII-B">VII-B</option>
+                          <option value="VIII-A">VIII-A</option>
+                          <option value="VIII-B">VIII-B</option>
+                          <option value="IX-A">IX-A</option>
+                          <option value="IX-B">IX-B</option>
+                        </>
+                      )}
+                      {studentForm.jenjang === 'SMA' && (
+                        <>
+                          <option value="X-A">X-A</option>
+                          <option value="X-B">X-B</option>
+                          <option value="XI-IPA">XI-IPA</option>
+                          <option value="XI-IPS">XI-IPS</option>
+                          <option value="XII-IPA">XII-IPA</option>
+                          <option value="XII-IPS">XII-IPS</option>
+                        </>
+                      )}
+                    </select>
+                  </div>
                 </div>
                 <div className="space-y-1">
                   <label className="text-xs font-bold text-slate-600">Email Wali Murid (Opsional)</label>

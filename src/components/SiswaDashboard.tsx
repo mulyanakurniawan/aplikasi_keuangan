@@ -343,101 +343,106 @@ export default function SiswaDashboard({ currentProfile, payments, onLogout, onO
   return (
     <div className="space-y-6 animate-fade-in" id="siswa-dashboard-root">
       {/* Top Welcome / Header section */}
-      <div className="bg-white rounded-xl p-6 text-slate-800 border border-slate-200 shadow-sm relative overflow-hidden">
-        
-        <div className="relative flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+      <div className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-950 text-white rounded-3xl p-6 sm:p-8 border border-yellow-500/30 shadow-xl relative overflow-hidden">
+        {/* Background ambient glow circles */}
+        <div className="absolute -top-16 -right-16 w-48 h-48 bg-yellow-400/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute -bottom-16 -left-16 w-48 h-48 bg-emerald-400/15 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div className="relative z-10 flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
           <div className="space-y-2">
-            <span className="bg-emerald-50 text-emerald-800 text-[10px] px-2.5 py-1 rounded-full font-bold border border-emerald-250 tracking-wider uppercase inline-block">
-              PORTAL KEUANGAN SISWA
-            </span>
-            <h1 className="text-xl md:text-2xl font-bold tracking-tight text-slate-900">
+            <div className="flex items-center gap-2">
+              <span className="bg-yellow-400 text-emerald-950 text-[10px] px-3 py-1 rounded-full font-black tracking-widest uppercase border border-yellow-200 shadow-sm inline-block">
+                PORTAL KEUANGAN SISWA
+              </span>
+            </div>
+            <h1 className="text-xl md:text-3xl font-black tracking-tight text-white drop-shadow-sm">
               Selamat Datang di Portal Keuangan Siswa
             </h1>
-            <p className="text-slate-500 font-medium text-xs">
+            <p className="text-emerald-200/90 font-medium text-xs">
               SMA Plus Babussalam — Layanan Pembayaran Transparan &amp; Mandiri
             </p>
           </div>
 
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2.5">
             <button
               onClick={handleDownloadStatement}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white border border-transparent text-xs px-4 py-2 rounded-lg font-medium transition duration-200 flex items-center gap-2 cursor-pointer shadow-sm"
+              className="bg-gradient-to-r from-yellow-400 via-yellow-500 to-amber-500 hover:from-yellow-300 hover:to-amber-400 text-emerald-950 border border-yellow-300 text-xs px-4 py-2.5 rounded-xl font-black transition-all duration-200 flex items-center gap-2 cursor-pointer shadow-md glow-yellow"
               id="btn-siswa-download-statement"
             >
-              <FileText className="w-4 h-4 text-yellow-350" />
+              <FileText className="w-4 h-4 text-emerald-950" />
               <span>Unduh Rincian Tagihan (PDF)</span>
             </button>
             <button
               onClick={onOpenSQL}
-              className="bg-white hover:bg-slate-50 text-slate-700 border border-slate-200 text-xs px-4 py-2 rounded-lg font-medium transition duration-200 flex items-center gap-2 cursor-pointer shadow-xs"
+              className="bg-emerald-900/60 hover:bg-emerald-800 text-emerald-100 border border-emerald-700/50 text-xs px-4 py-2.5 rounded-xl font-bold transition duration-200 flex items-center gap-2 cursor-pointer"
               title="Lihat Skema database Supabase"
               id="btn-siswa-view-sql"
             >
-              <Shield className="w-4 h-4 text-slate-500" />
-              <span>Skema Supabase SQL</span>
+              <Shield className="w-4 h-4 text-yellow-400" />
+              <span>Skema SQL</span>
             </button>
             <button
               onClick={onLogout}
-              className="bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-100 text-xs px-4 py-2 rounded-lg font-medium transition duration-200 flex items-center gap-2 cursor-pointer"
+              className="bg-rose-500/20 hover:bg-rose-600 text-rose-200 hover:text-white border border-rose-500/40 text-xs px-4 py-2.5 rounded-xl font-bold transition duration-200 flex items-center gap-2 cursor-pointer"
               id="btn-siswa-logout"
             >
-              <LogOut className="w-4 h-4 text-rose-500" />
+              <LogOut className="w-4 h-4 text-rose-300" />
               <span>Keluar</span>
             </button>
           </div>
         </div>
 
         {/* Short Profile Bar */}
-        <div className="mt-6 pt-5 border-t border-slate-200 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-          <div className="flex items-center gap-2.5">
-            <div className="p-1.5 bg-slate-50 border border-slate-200 rounded">
-              <User className="w-4 h-4 text-slate-500" />
+        <div className="mt-8 pt-6 border-t border-yellow-500/20 grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs relative z-10">
+          <div className="flex items-center gap-3 p-3 bg-emerald-900/40 border border-emerald-700/40 rounded-2xl">
+            <div className="p-2 bg-gradient-to-tr from-yellow-400 to-yellow-300 rounded-xl text-emerald-950 shadow-sm">
+              <User className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-slate-400">Nama Lengkap Siswa</div>
-              <div className="font-bold text-slate-800 text-sm">{currentProfile.nama}</div>
+              <div className="text-emerald-200/70 text-[10px] uppercase font-bold">Nama Lengkap Siswa</div>
+              <div className="font-extrabold text-white text-sm">{currentProfile.nama}</div>
             </div>
           </div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-1.5 bg-slate-50 border border-slate-200 rounded">
-              <Calendar className="w-4 h-4 text-slate-500" />
+          <div className="flex items-center gap-3 p-3 bg-emerald-900/40 border border-emerald-700/40 rounded-2xl">
+            <div className="p-2 bg-gradient-to-tr from-yellow-400 to-yellow-300 rounded-xl text-emerald-950 shadow-sm">
+              <Calendar className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-slate-400">Nomor Induk Siswa (NIS)</div>
-              <div className="font-bold text-slate-800 text-sm">{currentProfile.nis}</div>
+              <div className="text-emerald-200/70 text-[10px] uppercase font-bold">Nomor Induk Siswa (NIS)</div>
+              <div className="font-extrabold text-white text-sm font-mono">{currentProfile.nis}</div>
             </div>
           </div>
-          <div className="flex items-center gap-2.5">
-            <div className="p-1.5 bg-slate-50 border border-slate-200 rounded">
-              <BookOpen className="w-4 h-4 text-slate-500" />
+          <div className="flex items-center gap-3 p-3 bg-emerald-900/40 border border-emerald-700/40 rounded-2xl">
+            <div className="p-2 bg-gradient-to-tr from-yellow-400 to-yellow-300 rounded-xl text-emerald-950 shadow-sm">
+              <BookOpen className="w-4 h-4" />
             </div>
             <div>
-              <div className="text-slate-400">Kelas Aktif</div>
-              <div className="font-bold text-slate-800 text-sm">Kelas {currentProfile.kelas}</div>
+              <div className="text-emerald-200/70 text-[10px] uppercase font-bold">Kelas Aktif</div>
+              <div className="font-extrabold text-white text-sm">Kelas {currentProfile.kelas}</div>
             </div>
           </div>
         </div>
       </div>
 
       {/* Visual Kelunasan Progress Bar */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-3">
+      <div className="bg-white/90 backdrop-blur-md rounded-3xl border border-emerald-500/20 shadow-xl p-6 space-y-3">
         <div className="flex justify-between items-center text-xs">
           <div className="flex items-center gap-2">
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-600 inline-block animate-pulse" />
-            <h3 className="font-bold text-slate-800 text-sm">Kemajuan Kelunasan SPP Tahunan ({selectedYear})</h3>
+            <span className="w-3 h-3 rounded-full bg-yellow-400 inline-block animate-pulse glow-yellow" />
+            <h3 className="font-black text-slate-900 text-sm">Kemajuan Kelunasan SPP Tahunan ({selectedYear})</h3>
           </div>
-          <span className="font-extrabold text-emerald-700 bg-emerald-50 border border-emerald-150 px-2 py-0.5 rounded-full">
+          <span className="font-black text-emerald-950 bg-gradient-to-r from-yellow-400 to-yellow-500 border border-yellow-300 px-3 py-1 rounded-full shadow-sm">
             {lunasCount} / 12 Bulan Lunas ({Math.round((lunasCount / 12) * 100)}%)
           </span>
         </div>
-        <div className="w-full bg-slate-100 rounded-full h-3.5 relative overflow-hidden border border-slate-200/50 shadow-inner">
+        <div className="w-full bg-slate-100 rounded-full h-4 relative overflow-hidden border border-emerald-100 shadow-inner">
           <div 
-            className="bg-gradient-to-r from-emerald-600 to-yellow-400 h-full rounded-full transition-all duration-1000 shadow-sm"
+            className="bg-gradient-to-r from-emerald-700 via-emerald-500 to-yellow-400 h-full rounded-full transition-all duration-1000 shadow-md"
             style={{ width: `${(lunasCount / 12) * 100}%` }}
           />
         </div>
-        <p className="text-[10px] text-slate-400 font-medium">
-          * Bar indikator di atas menunjukkan kemajuan pembayaran SPP bulanan siswa untuk tahun ajaran aktif. Total SPP terbayar: <strong className="text-slate-700">{formatRupiah(totalPaidNominal)}</strong>.
+        <p className="text-[10px] text-slate-500 font-medium">
+          * Bar indikator di atas menunjukkan kemajuan pembayaran SPP bulanan siswa untuk tahun ajaran aktif. Total SPP terbayar: <strong className="text-emerald-700 font-bold">{formatRupiah(totalPaidNominal)}</strong>.
         </p>
       </div>
 
@@ -445,19 +450,19 @@ export default function SiswaDashboard({ currentProfile, payments, onLogout, onO
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
         {/* Status Card SPP Bulan Berjalan */}
-        <div className="lg:col-span-2 bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-6 flex flex-col justify-between" id="status-card-spp">
+        <div className="lg:col-span-2 bg-white/90 backdrop-blur-md rounded-3xl border border-emerald-500/20 shadow-xl p-6 space-y-6 flex flex-col justify-between" id="status-card-spp">
           <div>
-            <div className="flex justify-between items-center pb-3 border-b border-slate-200">
-              <h3 className="font-bold text-slate-850 text-sm flex items-center gap-2">
-                <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+            <div className="flex justify-between items-center pb-3 border-b border-emerald-100">
+              <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
+                <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
                 Status SPP Bulan Berjalan
               </h3>
               <div className="flex items-center gap-2">
-                <span className="text-xs text-slate-500 font-medium">Bulan Berjalan:</span>
+                <span className="text-xs text-slate-500 font-semibold">Bulan Berjalan:</span>
                 <select
                   value={currentSystemMonth}
                   onChange={(e) => setCurrentSystemMonth(e.target.value)}
-                  className="bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700 px-2.5 py-1 rounded-lg focus:outline-none cursor-pointer"
+                  className="bg-slate-50 border border-emerald-200 text-xs font-bold text-slate-800 px-3 py-1.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 cursor-pointer"
                   id="select-siswa-running-month"
                 >
                   {BULAN_LIST.map(b => (
@@ -470,38 +475,38 @@ export default function SiswaDashboard({ currentProfile, payments, onLogout, onO
             {/* Glowing Status Alert Indicator */}
             <div className="mt-5">
               {isCurrentMonthLunas ? (
-                <div className="bg-emerald-50/50 border border-emerald-200 rounded-xl p-5 flex items-start gap-4 transition duration-300">
-                  <div className="p-3 bg-emerald-600 text-white rounded-full">
+                <div className="bg-gradient-to-r from-emerald-900 to-emerald-800 border border-yellow-400/40 rounded-2xl p-5 flex items-start gap-4 shadow-lg glow-emerald text-white">
+                  <div className="p-3 bg-yellow-400 text-emerald-950 rounded-2xl shadow-sm shrink-0">
                     <CheckCircle className="w-6 h-6" />
                   </div>
-                  <div className="space-y-1">
-                    <span className="bg-emerald-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md inline-block tracking-wider uppercase">
+                  <div className="space-y-1.5">
+                    <span className="bg-yellow-400 text-emerald-950 text-[10px] font-black px-2.5 py-0.5 rounded-full inline-block tracking-widest uppercase border border-yellow-200">
                       LUNAS TERBAYAR
                     </span>
-                    <h4 className="text-base font-bold text-emerald-950">
+                    <h4 className="text-lg font-black text-white">
                       SPP Bulan {currentSystemMonth} Sudah Lunas
                     </h4>
-                    <p className="text-xs text-emerald-700 leading-relaxed max-w-xl">
+                    <p className="text-xs text-emerald-100/90 leading-relaxed max-w-xl">
                       Alhamdulillah, pembayaran untuk bulan {currentSystemMonth} telah terverifikasi dengan nomor kwitansi 
-                      <code className="mx-1 px-1 py-0.5 bg-emerald-100 rounded text-emerald-800 font-semibold">{currentMonthPayment?.invoice_no}</code>. 
+                      <code className="mx-1 px-2 py-0.5 bg-emerald-950 rounded-md text-yellow-300 font-mono font-bold border border-yellow-400/30">{currentMonthPayment?.invoice_no}</code>. 
                       Anda dapat mengunduh bukti kwitansi sah di tabel riwayat di bawah.
                     </p>
                   </div>
                 </div>
               ) : (
-                <div className="bg-amber-50/50 border border-amber-250 rounded-xl p-5 flex items-start gap-4 transition duration-300">
-                  <div className="p-3 bg-amber-500 text-white rounded-full animate-pulse">
+                <div className="bg-gradient-to-r from-amber-950 via-slate-900 to-amber-950 border border-amber-500/40 rounded-2xl p-5 flex items-start gap-4 shadow-lg text-white">
+                  <div className="p-3 bg-amber-500 text-white rounded-2xl shrink-0 animate-pulse">
                     <AlertCircle className="w-6 h-6" />
                   </div>
-                  <div className="space-y-1">
-                    <span className="bg-amber-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-md inline-block tracking-wider uppercase">
+                  <div className="space-y-1.5">
+                    <span className="bg-amber-500 text-slate-950 text-[10px] font-black px-2.5 py-0.5 rounded-full inline-block tracking-widest uppercase">
                       BELUM BAYAR
                     </span>
-                    <h4 className="text-base font-bold text-amber-950">
+                    <h4 className="text-lg font-black text-amber-200">
                       SPP Bulan {currentSystemMonth} Menunggu Pembayaran
                     </h4>
-                    <p className="text-xs text-amber-800 leading-relaxed max-w-xl">
-                      Sumbangan SPP sebesar {formatRupiah(NOMINAL_SPP)} untuk bulan {currentSystemMonth} belum lunas tercatat. Silakan lakukan pembayaran ke Bendahara Sekolah di Kantor Tata Usaha SMA Plus Babussalam.
+                    <p className="text-xs text-amber-100/90 leading-relaxed max-w-xl">
+                      Sumbangan SPP sebesar <strong className="text-yellow-400">{formatRupiah(NOMINAL_SPP)}</strong> untuk bulan {currentSystemMonth} belum lunas tercatat. Silakan lakukan pembayaran ke Bendahara Sekolah di Kantor Tata Usaha SMA Plus Babussalam.
                     </p>
                   </div>
                 </div>
@@ -509,18 +514,20 @@ export default function SiswaDashboard({ currentProfile, payments, onLogout, onO
             </div>
           </div>
 
-          <div className="bg-slate-50 border border-slate-200 rounded-lg p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs text-slate-600">
-            <div className="flex gap-2 items-center">
-              <QrCode className="w-5 h-5 text-slate-500" />
+          <div className="bg-slate-50 border border-emerald-100 rounded-2xl p-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 text-xs text-slate-600">
+            <div className="flex gap-3 items-center">
+              <div className="p-2 bg-emerald-100 rounded-xl text-emerald-700">
+                <QrCode className="w-5 h-5" />
+              </div>
               <div>
-                <span className="font-bold text-slate-700 block">Metode Pembayaran</span>
+                <span className="font-extrabold text-slate-800 block">Metode Pembayaran</span>
                 <span>Tunai via Kasir Sekolah / Transfer Bank Syariah Mandiri (BSI)</span>
               </div>
             </div>
             {isCurrentMonthLunas && currentMonthPayment && (
               <button
                 onClick={() => handlePrintReceipt(currentMonthPayment)}
-                className="flex items-center gap-1.5 bg-emerald-600 hover:bg-emerald-700 text-white font-medium px-3.5 py-2 rounded-lg transition duration-200 cursor-pointer shadow-sm w-full sm:w-auto justify-center"
+                className="flex items-center gap-2 bg-gradient-to-r from-emerald-700 to-emerald-600 hover:from-emerald-600 hover:to-yellow-500 text-white font-extrabold px-4 py-2.5 rounded-xl transition-all duration-200 cursor-pointer shadow-md hover:shadow-lg w-full sm:w-auto justify-center glow-emerald"
                 id="btn-print-current-receipt"
               >
                 <Printer className="w-4 h-4" />
@@ -531,47 +538,47 @@ export default function SiswaDashboard({ currentProfile, payments, onLogout, onO
         </div>
 
         {/* Summary Mini Box */}
-        <div className="bg-white rounded-xl border border-slate-200 shadow-sm p-6 space-y-4" id="siswa-spp-summary-card">
-          <h3 className="font-bold text-slate-850 text-sm pb-3 border-b border-slate-200 flex items-center gap-2">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 inline-block" />
+        <div className="bg-white/90 backdrop-blur-md rounded-3xl border border-emerald-500/20 shadow-xl p-6 space-y-4" id="siswa-spp-summary-card">
+          <h3 className="font-extrabold text-slate-900 text-sm pb-3 border-b border-emerald-100 flex items-center gap-2">
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
             Ringkasan Keuangan
           </h3>
           
-          <div className="space-y-4.5 pt-2">
+          <div className="space-y-4 pt-1">
             <div>
-              <div className="text-xs text-slate-500">Tahun Ajaran Berjalan</div>
-              <div className="text-base font-bold text-slate-800">{selectedYear}</div>
+              <div className="text-xs text-slate-500 font-medium">Tahun Ajaran Berjalan</div>
+              <div className="text-lg font-black text-slate-900">{selectedYear}</div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
-              <div className="p-3 bg-emerald-50/40 border border-emerald-200 rounded-lg">
-                <span className="text-[10px] text-slate-500 block">Lunas (Bulan)</span>
-                <span className="text-xl font-bold text-emerald-700">{lunasCount} / 12</span>
+              <div className="p-3.5 bg-emerald-50 border border-emerald-200 rounded-2xl">
+                <span className="text-[10px] text-emerald-800 font-extrabold block uppercase">Lunas (Bulan)</span>
+                <span className="text-2xl font-black text-emerald-700">{lunasCount} / 12</span>
               </div>
-              <div className="p-3 bg-amber-50/40 border border-amber-200 rounded-lg">
-                <span className="text-[10px] text-slate-500 block">Tunggakan (Bulan)</span>
-                <span className="text-xl font-bold text-amber-700">{belumBayarCount}</span>
+              <div className="p-3.5 bg-amber-50 border border-amber-200 rounded-2xl">
+                <span className="text-[10px] text-amber-800 font-extrabold block uppercase">Tunggakan (Bulan)</span>
+                <span className="text-2xl font-black text-amber-700">{belumBayarCount}</span>
               </div>
             </div>
 
-            <div className="p-4 bg-slate-50 border border-slate-200 rounded-lg flex items-center justify-between">
+            <div className="p-4 bg-gradient-to-r from-emerald-950 to-emerald-900 text-white border border-yellow-400/30 rounded-2xl flex items-center justify-between shadow-md glow-emerald">
               <div>
-                <span className="text-[10px] text-slate-500 block">Total SPP Terbayar</span>
-                <span className="text-lg font-bold text-emerald-600">{formatRupiah(totalPaidNominal)}</span>
+                <span className="text-[10px] text-yellow-400 font-black uppercase block">Total SPP Terbayar</span>
+                <span className="text-lg font-black text-white">{formatRupiah(totalPaidNominal)}</span>
               </div>
-              <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg">
+              <div className="p-2.5 bg-yellow-400 text-emerald-950 rounded-xl font-black shadow-sm">
                 <DollarSign className="w-5 h-5" />
               </div>
             </div>
 
-            <div className="space-y-1">
-              <div className="flex justify-between text-[11px] text-slate-500 font-medium">
+            <div className="space-y-1.5">
+              <div className="flex justify-between text-[11px] text-slate-600 font-bold">
                 <span>Rasio Kepatuhan SPP</span>
-                <span>{Math.round((lunasCount / 12) * 100)}%</span>
+                <span className="text-emerald-700">{Math.round((lunasCount / 12) * 100)}%</span>
               </div>
-              <div className="w-full bg-slate-100 rounded-full h-2">
+              <div className="w-full bg-slate-100 rounded-full h-2.5 border border-emerald-100 overflow-hidden">
                 <div 
-                  className="bg-emerald-500 h-2 rounded-full transition-all duration-500" 
+                  className="bg-gradient-to-r from-emerald-600 to-yellow-400 h-full rounded-full transition-all duration-500" 
                   style={{ width: `${(lunasCount / 12) * 100}%` }}
                 />
               </div>
@@ -582,23 +589,23 @@ export default function SiswaDashboard({ currentProfile, payments, onLogout, onO
       </div>
 
       {/* History Table - Matriks 12 Bulan (Juli - Juni) */}
-      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden" id="siswa-spp-matrix-table">
-        <div className="p-6 pb-4 border-b border-slate-200 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
+      <div className="bg-white/90 backdrop-blur-md rounded-3xl border border-emerald-500/20 shadow-xl overflow-hidden" id="siswa-spp-matrix-table">
+        <div className="p-6 pb-4 border-b border-emerald-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
           <div>
-            <h3 className="font-bold text-slate-850 text-sm">
+            <h3 className="font-extrabold text-slate-900 text-sm">
               Riwayat Pembayaran &amp; Matriks SPP 12 Bulan
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-500 mt-0.5">
               Daftar rinci status setoran SPP siswa per bulan dari bulan Juli s/d Juni untuk tahun ajaran aktif.
             </p>
           </div>
           
           <div className="flex items-center gap-2">
-            <span className="text-xs text-slate-500 font-medium">Filter Tahun Ajaran:</span>
+            <span className="text-xs text-slate-600 font-bold">Filter Tahun Ajaran:</span>
             <select
               value={selectedYear}
               onChange={(e) => setSelectedYear(e.target.value)}
-              className="bg-white border border-slate-200 text-xs text-slate-700 px-3 py-1.5 rounded-lg focus:outline-none focus:ring-1 focus:ring-emerald-500 font-semibold cursor-pointer"
+              className="bg-slate-50 border border-emerald-200 text-xs text-slate-800 px-3 py-1.5 rounded-xl focus:outline-none focus:ring-2 focus:ring-emerald-500 font-bold cursor-pointer"
               id="select-siswa-tahun-ajaran"
             >
               <option value="2025/2026">2025/2026</option>
@@ -613,7 +620,7 @@ export default function SiswaDashboard({ currentProfile, payments, onLogout, onO
           {/* Desktop Table */}
           <table className="w-full text-left border-collapse hidden md:table">
             <thead>
-              <tr className="bg-slate-50 text-slate-500 font-bold text-[10px] uppercase tracking-wider border-b border-slate-200 sticky top-0">
+              <tr className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-950 text-yellow-300 font-black text-[10px] uppercase tracking-wider sticky top-0">
                 <th className="py-4 px-6">Bulan</th>
                 <th className="py-4 px-6">Tahun Ajaran</th>
                 <th className="py-4 px-6">Nominal SPP</th>
@@ -623,30 +630,30 @@ export default function SiswaDashboard({ currentProfile, payments, onLogout, onO
                 <th className="py-4 px-6 text-center">Tindakan</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-150/60 text-slate-700 text-sm">
+            <tbody className="divide-y divide-emerald-100/60 text-slate-700 text-sm">
               {BULAN_LIST.map((bulanName) => {
                 const record = studentPayments.find(p => p.bulan === bulanName);
                 const isLunas = record?.status === 'lunas';
                 
                 return (
-                  <tr key={bulanName} className="hover:bg-slate-50/50 transition">
-                    <td className="py-4 px-6 font-semibold text-slate-800">{bulanName}</td>
-                    <td className="py-4 px-6 text-slate-500">{selectedYear}</td>
-                    <td className="py-4 px-6 text-slate-600 font-medium">{formatRupiah(NOMINAL_SPP)}</td>
+                  <tr key={bulanName} className="hover:bg-emerald-50/40 transition-colors">
+                    <td className="py-4 px-6 font-extrabold text-slate-900">{bulanName}</td>
+                    <td className="py-4 px-6 text-slate-500 font-medium">{selectedYear}</td>
+                    <td className="py-4 px-6 text-slate-700 font-bold">{formatRupiah(NOMINAL_SPP)}</td>
                     <td className="py-4 px-6 text-center">
                       {isLunas ? (
-                        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-emerald-200">
-                          <CheckCircle className="w-3 h-3 text-emerald-600" />
+                        <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 text-[10px] font-black px-3 py-1 rounded-full border border-emerald-300">
+                          <CheckCircle className="w-3.5 h-3.5 text-emerald-600" />
                           Lunas
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 text-[10px] font-bold px-2.5 py-0.5 rounded-full border border-amber-200">
-                          <AlertCircle className="w-3 h-3 text-amber-600" />
+                        <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-900 text-[10px] font-black px-3 py-1 rounded-full border border-amber-300">
+                          <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
                           Belum Bayar
                         </span>
                       )}
                     </td>
-                    <td className="py-4 px-6 text-slate-500">
+                    <td className="py-4 px-6 text-slate-600 font-medium">
                       {isLunas && record.tanggal_bayar ? (
                         new Date(record.tanggal_bayar).toLocaleDateString('id-ID', {
                           day: 'numeric',
@@ -659,7 +666,7 @@ export default function SiswaDashboard({ currentProfile, payments, onLogout, onO
                     </td>
                     <td className="py-4 px-6">
                       {isLunas && record.invoice_no ? (
-                        <span className="font-mono text-xs text-slate-600 font-semibold bg-slate-100 px-2 py-0.5 rounded border border-slate-200">
+                        <span className="font-mono text-xs text-slate-800 font-bold bg-slate-100 px-2.5 py-1 rounded-lg border border-slate-200 shadow-xs">
                           {record.invoice_no}
                         </span>
                       ) : (
@@ -670,7 +677,7 @@ export default function SiswaDashboard({ currentProfile, payments, onLogout, onO
                       {isLunas && record ? (
                         <button
                           onClick={() => handlePrintReceipt(record)}
-                          className="inline-flex items-center gap-1 bg-white hover:bg-slate-50 text-slate-700 text-xs font-semibold px-3 py-1.5 rounded-lg border border-slate-200 transition cursor-pointer"
+                          className="inline-flex items-center gap-1.5 bg-gradient-to-r from-emerald-700 to-emerald-600 hover:from-emerald-600 hover:to-yellow-500 text-white text-xs font-bold px-3.5 py-1.5 rounded-xl border border-emerald-600 transition cursor-pointer shadow-sm glow-emerald"
                           id={`btn-print-receipt-${bulanName}`}
                         >
                           <Printer className="w-3.5 h-3.5" />
@@ -686,7 +693,7 @@ export default function SiswaDashboard({ currentProfile, payments, onLogout, onO
             </tbody>
           </table>
  
-          {/* Mobile Grid Layout (Super User-Friendly Card List) */}
+          {/* Mobile Grid Layout */}
           <div className="md:hidden p-4 space-y-4">
             {BULAN_LIST.map((bulanName) => {
               const record = studentPayments.find(p => p.bulan === bulanName);
@@ -695,20 +702,20 @@ export default function SiswaDashboard({ currentProfile, payments, onLogout, onO
               return (
                 <div 
                   key={bulanName}
-                  className={`p-4 rounded-lg border ${
-                    isLunas ? 'bg-emerald-50/10 border-emerald-200' : 'bg-slate-50/30 border-slate-200'
-                  } space-y-3 shadow-xs`}
+                  className={`p-4 rounded-2xl border ${
+                    isLunas ? 'bg-gradient-to-br from-emerald-50 to-white border-emerald-300' : 'bg-gradient-to-br from-amber-50/50 to-white border-slate-200'
+                  } space-y-3 shadow-sm`}
                 >
                   <div className="flex justify-between items-center">
-                    <span className="font-bold text-slate-800 text-base">{bulanName}</span>
+                    <span className="font-black text-slate-900 text-base">{bulanName}</span>
                     <div>
                       {isLunas ? (
-                        <span className="inline-flex items-center gap-1 bg-emerald-50 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-emerald-200">
+                        <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-900 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-emerald-300">
                           <CheckCircle className="w-3 h-3 text-emerald-600" />
                           LUNAS
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded-full border border-amber-250">
+                        <span className="inline-flex items-center gap-1 bg-amber-100 text-amber-900 text-[10px] font-black px-2.5 py-0.5 rounded-full border border-amber-300">
                           <AlertCircle className="w-3 h-3 text-amber-600" />
                           BELUM BAYAR
                         </span>
@@ -716,29 +723,29 @@ export default function SiswaDashboard({ currentProfile, payments, onLogout, onO
                     </div>
                   </div>
  
-                  <div className="grid grid-cols-2 gap-2 text-xs pt-1 border-t border-slate-100">
+                  <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-100">
                     <div>
-                      <span className="text-slate-450 block text-[10px] uppercase font-semibold">Nominal Tagihan</span>
-                      <span className="font-bold text-slate-700">{formatRupiah(NOMINAL_SPP)}</span>
+                      <span className="text-slate-500 block text-[10px] uppercase font-bold">Nominal Tagihan</span>
+                      <span className="font-extrabold text-slate-900">{formatRupiah(NOMINAL_SPP)}</span>
                     </div>
                     <div>
-                      <span className="text-slate-450 block text-[10px] uppercase font-semibold">Tahun Ajaran</span>
-                      <span className="font-semibold text-slate-600">{selectedYear}</span>
+                      <span className="text-slate-500 block text-[10px] uppercase font-bold">Tahun Ajaran</span>
+                      <span className="font-semibold text-slate-700">{selectedYear}</span>
                     </div>
                   </div>
  
                   {isLunas && record && (
-                    <div className="space-y-2 pt-2 border-t border-slate-100">
+                    <div className="space-y-2.5 pt-2 border-t border-slate-100">
                       <div className="grid grid-cols-2 gap-2 text-xs">
                         <div>
-                          <span className="text-slate-400 block text-[10px] uppercase font-semibold">Tgl Bayar</span>
-                          <span className="font-medium text-slate-600">
+                          <span className="text-slate-400 block text-[10px] uppercase font-bold">Tgl Bayar</span>
+                          <span className="font-medium text-slate-700">
                             {record.tanggal_bayar ? new Date(record.tanggal_bayar).toLocaleDateString('id-ID', {day: 'numeric', month: 'short', year: 'numeric'}) : '-'}
                           </span>
                         </div>
                         <div>
-                          <span className="text-slate-400 block text-[10px] uppercase font-semibold">No. Invoice</span>
-                          <span className="font-mono text-[10px] text-slate-700 font-bold bg-slate-100 px-1 py-0.5 rounded border border-slate-200">
+                          <span className="text-slate-400 block text-[10px] uppercase font-bold">No. Invoice</span>
+                          <span className="font-mono text-[10px] text-slate-800 font-bold bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
                             {record.invoice_no}
                           </span>
                         </div>
@@ -746,7 +753,7 @@ export default function SiswaDashboard({ currentProfile, payments, onLogout, onO
  
                       <button
                         onClick={() => handlePrintReceipt(record)}
-                        className="flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2 px-3 rounded-lg text-xs w-full transition duration-150 cursor-pointer shadow-sm"
+                        className="flex items-center justify-center gap-2 bg-gradient-to-r from-emerald-700 to-emerald-600 hover:from-emerald-600 hover:to-yellow-500 text-white font-bold py-2.5 px-3 rounded-xl text-xs w-full transition duration-150 cursor-pointer shadow-md glow-emerald"
                         id={`btn-mobile-print-${bulanName}`}
                       >
                         <Printer className="w-4 h-4" />
@@ -756,7 +763,7 @@ export default function SiswaDashboard({ currentProfile, payments, onLogout, onO
                   )}
  
                   {!isLunas && (
-                    <div className="bg-amber-500/10 border border-amber-400/20 rounded-lg p-2 flex items-center gap-1.5 text-[11px] text-amber-800">
+                    <div className="bg-amber-50 border border-amber-200 rounded-xl p-2.5 flex items-center gap-2 text-[11px] text-amber-900 font-medium">
                       <Info className="w-4 h-4 shrink-0 text-amber-600" />
                       <span>Segera lakukan pembayaran ke loket TU Bendahara Sekolah.</span>
                     </div>

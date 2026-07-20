@@ -12,7 +12,7 @@ export default function SupabaseSQLDialog() {
 CREATE TYPE user_role AS ENUM ('admin', 'siswa');
 
 -- 2. Membuat Tabel Profiles (Data Akun & Siswa)
-CREATE TABLE public.profiles (
+CREATE TABLE IF NOT EXISTS public.profiles (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
   nama VARCHAR(255) NOT NULL,
   nis VARCHAR(50) DEFAULT '-',
@@ -23,6 +23,10 @@ CREATE TABLE public.profiles (
   no_hp VARCHAR(50),
   created_at TIMESTAMP WITH TIME ZONE DEFAULT TIMEZONE('utc'::text, NOW()) NOT NULL
 );
+
+-- (Jika tabel profiles sudah ada sebelumnya, tambahkan kolom baru):
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS password VARCHAR(255);
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS no_hp VARCHAR(50);
 
 -- 3. Membuat Tabel Pembayaran SPP (12 Bulan Ajaran)
 CREATE TABLE public.spp_pembayaran (
