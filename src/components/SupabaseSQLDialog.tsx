@@ -117,11 +117,21 @@ BEGIN
   );
   RETURN NEW;
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+-- ==========================================
+-- SEED / INSERT AKUN ADMIN SD, SMP, SMA & SUPER ADMIN
+-- ==========================================
+INSERT INTO public.profiles (id, nama, nis, kelas, role, email, password, no_hp)
+VALUES 
+  ('7c7c1bdd-6ba2-4aab-8ad4-6dc4b3a24927', 'Super Admin Yayasan', '-', '-', 'admin', 'admin@babussalam.sch.id', 'password123', '628123456789'),
+  ('11111111-0000-4000-a000-000000000001', 'Admin SD Babussalam', '-', '-', 'admin', 'admin.sd@babussalam.sch.id', 'password123', '628120000001'),
+  ('22222222-0000-4000-a000-000000000002', 'Admin SMP Babussalam', '-', '-', 'admin', 'admin.smp@babussalam.sch.id', 'password123', '628120000002'),
+  ('33333333-0000-4000-a000-000000000003', 'Admin SMA Babussalam', '-', '-', 'admin', 'admin.sma@babussalam.sch.id', 'password123', '628120000003')
+ON CONFLICT (id) DO UPDATE SET 
+  nama = EXCLUDED.nama,
+  email = EXCLUDED.email,
+  password = EXCLUDED.password,
+  no_hp = EXCLUDED.no_hp,
+  role = EXCLUDED.role;
 `;
 
   const copyToClipboard = () => {
