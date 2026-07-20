@@ -294,7 +294,7 @@ export default function App() {
           <div className="w-16 h-16 border-4 border-yellow-400/20 border-t-emerald-400 rounded-full animate-spin glow-emerald"></div>
           <GraduationCap className="w-6 h-6 text-yellow-300 absolute" />
         </div>
-        <p className="text-xs text-emerald-200 font-bold mt-5 tracking-widest uppercase animate-pulse">Memuat Dasbor SPP...</p>
+        <p className="text-xs text-emerald-200 font-bold mt-5 tracking-widest uppercase animate-pulse">Memuat Portal Babussalam...</p>
       </div>
     );
   }
@@ -336,13 +336,13 @@ export default function App() {
             <div>
               <div className="flex items-center gap-2">
                 <span className="font-black text-white tracking-tight text-sm sm:text-base">
-                  SMA PLUS BABUSSALAM
+                  YAYASAN AL-BABUSSALAM
                 </span>
                 <span className="bg-gradient-to-r from-yellow-400 to-yellow-500 text-emerald-950 text-[9px] font-black px-2 py-0.5 rounded-full uppercase border border-yellow-300 shadow-sm">
-                  SPP Online
+                  Portal Babussalam
                 </span>
               </div>
-              <p className="text-[10px] text-emerald-200/80 font-medium">Sistem Informasi Pembayaran SPP</p>
+              <p className="text-[10px] text-emerald-200/80 font-medium">Portal Keuangan &amp; Administrasi Sekolah</p>
             </div>
           </div>
 
@@ -381,10 +381,10 @@ export default function App() {
 
                   <div className="relative space-y-2.5 z-10">
                     <span className="bg-yellow-400/90 text-emerald-950 text-[10px] font-black tracking-widest px-3 py-1 rounded-full shadow-md uppercase inline-block border border-yellow-200">
-                      Portal Pembayaran SPP
+                      Portal Babussalam
                     </span>
                     <h2 className="text-2xl font-black tracking-tight text-white drop-shadow-sm">
-                      SMA PLUS BABUSSALAM
+                      SEKOLAH BABUSSALAM
                     </h2>
                     <p className="text-xs text-emerald-100/90 font-medium max-w-xs mx-auto">
                       Silakan masuk untuk mengakses dasbor keuangan siswa atau administrasi kasir sekolah.

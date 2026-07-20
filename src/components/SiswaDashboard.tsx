@@ -179,13 +179,13 @@ export default function SiswaDashboard({ currentProfile, payments, daftarUlangPa
     doc.setFont("helvetica", "bold");
     doc.setFontSize(12);
     doc.setTextColor(15, 23, 42); // slate-900
-    doc.text("KWITANSI BUKTI PEMBAYARAN SPP", doc.internal.pageSize.width / 2, 44, { align: "center" });
+    doc.text("KWITANSI BUKTI PEMBAYARAN BIAYA PENDIDIKAN", doc.internal.pageSize.width / 2, 44, { align: "center" });
 
     // Invoice Meta Information
     doc.setFont("helvetica", "normal");
     doc.setFontSize(8.5);
     doc.setTextColor(71, 85, 105); // slate-600
-    doc.text(`No. Invoice : ${pembayaran.invoice_no || 'INV/SPP/TEMP/' + currentProfile.nis}`, 12, 53);
+    doc.text(`No. Invoice : ${pembayaran.invoice_no || 'INV/BP/TEMP/' + currentProfile.nis}`, 12, 53);
     doc.text(`Tanggal     : ${pembayaran.tanggal_bayar ? new Date(pembayaran.tanggal_bayar).toLocaleDateString('id-ID', {day: 'numeric', month: 'long', year: 'numeric'}) : '-'}`, 12, 58);
     doc.text(`Tahun Ajaran: ${pembayaran.tahun_ajaran}`, 12, 63);
 
@@ -207,7 +207,7 @@ export default function SiswaDashboard({ currentProfile, payments, daftarUlangPa
     doc.rect(10, 97, doc.internal.pageSize.width - 20, 7, "F");
     doc.setTextColor(255, 255, 255);
     doc.setFont("helvetica", "bold");
-    doc.text("Uraian SPP Bulanan", 14, 101.5);
+    doc.text("Uraian Pembayaran Bulanan", 14, 101.5);
     doc.text("Status", doc.internal.pageSize.width / 2 + 10, 101.5, { align: "center" });
     doc.text("Nominal (Rp)", doc.internal.pageSize.width - 14, 101.5, { align: "right" });
 
@@ -215,7 +215,7 @@ export default function SiswaDashboard({ currentProfile, payments, daftarUlangPa
     doc.setTextColor(15, 23, 42);
     doc.setFont("helvetica", "normal");
     doc.rect(10, 104, doc.internal.pageSize.width - 20, 14);
-    doc.text(`Sumbangan Pembinaan Pendidikan (SPP)`, 14, 110);
+    doc.text(`Biaya Pendidikan Bulanan`, 14, 110);
     doc.setFont("helvetica", "oblique");
     doc.text(`Bulan ${pembayaran.bulan} (${pembayaran.tahun_ajaran})`, 14, 114);
     
@@ -516,7 +516,7 @@ export default function SiswaDashboard({ currentProfile, payments, daftarUlangPa
         <div className="flex justify-between items-center text-xs">
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 rounded-full bg-yellow-400 inline-block animate-pulse glow-yellow" />
-            <h3 className="font-black text-slate-900 text-sm">Kemajuan Kelunasan SPP Tahunan ({selectedYear})</h3>
+            <h3 className="font-black text-slate-900 text-sm">Kemajuan Kelunasan Pembayaran Bulanan ({selectedYear})</h3>
           </div>
           <span className="font-black text-emerald-950 bg-gradient-to-r from-yellow-400 to-yellow-500 border border-yellow-300 px-3 py-1 rounded-full shadow-sm">
             {lunasCount} / 12 Bulan Lunas ({Math.round((lunasCount / 12) * 100)}%)
@@ -529,7 +529,7 @@ export default function SiswaDashboard({ currentProfile, payments, daftarUlangPa
           />
         </div>
         <p className="text-[10px] text-slate-500 font-medium">
-          * Bar indikator di atas menunjukkan kemajuan pembayaran SPP bulanan siswa untuk tahun ajaran aktif. Total SPP terbayar: <strong className="text-emerald-700 font-bold">{formatRupiah(totalPaidNominal)}</strong>.
+          * Bar indikator di atas menunjukkan kemajuan pembayaran bulanan siswa untuk tahun ajaran aktif. Total terbayar: <strong className="text-emerald-700 font-bold">{formatRupiah(totalPaidNominal)}</strong>.
         </p>
       </div>
 
@@ -595,7 +595,7 @@ export default function SiswaDashboard({ currentProfile, payments, daftarUlangPa
             <div className="flex justify-between items-center pb-3 border-b border-emerald-100">
               <h3 className="font-extrabold text-slate-900 text-sm flex items-center gap-2">
                 <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 inline-block" />
-                Status SPP Bulan Berjalan
+                Status Pembayaran Bulan Berjalan
               </h3>
               <div className="flex items-center gap-2">
                 <span className="text-xs text-slate-500 font-semibold">Bulan Berjalan:</span>
@@ -624,7 +624,7 @@ export default function SiswaDashboard({ currentProfile, payments, daftarUlangPa
                       LUNAS TERBAYAR
                     </span>
                     <h4 className="text-lg font-black text-white">
-                      SPP Bulan {currentSystemMonth} Sudah Lunas
+                      Pembayaran Bulan {currentSystemMonth} Sudah Lunas
                     </h4>
                     <p className="text-xs text-emerald-100/90 leading-relaxed max-w-xl">
                       Alhamdulillah, pembayaran untuk bulan {currentSystemMonth} telah terverifikasi dengan nomor kwitansi 
@@ -643,10 +643,10 @@ export default function SiswaDashboard({ currentProfile, payments, daftarUlangPa
                       BELUM BAYAR
                     </span>
                     <h4 className="text-lg font-black text-amber-200">
-                      SPP Bulan {currentSystemMonth} Menunggu Pembayaran
+                      Pembayaran Bulan {currentSystemMonth} Menunggu Setoran
                     </h4>
                     <p className="text-xs text-amber-100/90 leading-relaxed max-w-xl">
-                      Sumbangan SPP sebesar <strong className="text-yellow-400">{formatRupiah(NOMINAL_SPP)}</strong> untuk bulan {currentSystemMonth} belum lunas tercatat. Silakan lakukan pembayaran ke Bendahara Sekolah di Kantor Tata Usaha SMA Plus Babussalam.
+                      Biaya pendidikan sebesar <strong className="text-yellow-400">{formatRupiah(NOMINAL_SPP)}</strong> untuk bulan {currentSystemMonth} belum lunas tercatat. Silakan lakukan pembayaran ke Bendahara Sekolah di Kantor Tata Usaha Babussalam.
                     </p>
                   </div>
                 </div>
@@ -660,8 +660,8 @@ export default function SiswaDashboard({ currentProfile, payments, daftarUlangPa
                 <QrCode className="w-5 h-5" />
               </div>
               <div>
-                <span className="font-extrabold text-slate-800 block">Metode Pembayaran</span>
-                <span>Tunai via Kasir Sekolah / Transfer Bank Syariah Mandiri (BSI)</span>
+                <div className="font-bold text-slate-800">QRIS &amp; Transfer Bank Babussalam</div>
+                <div className="text-[10px] text-slate-500">Bank Muamalat: 123-456-7890 (Yayasan Babussalam)</div>
               </div>
             </div>
             {isCurrentMonthLunas && currentMonthPayment && (
@@ -703,7 +703,7 @@ export default function SiswaDashboard({ currentProfile, payments, daftarUlangPa
 
             <div className="p-4 bg-gradient-to-r from-emerald-950 to-emerald-900 text-white border border-yellow-400/30 rounded-2xl flex items-center justify-between shadow-md glow-emerald">
               <div>
-                <span className="text-[10px] text-yellow-400 font-black uppercase block">Total SPP Terbayar</span>
+                <span className="text-[10px] text-yellow-400 font-black uppercase block">Total Terbayar</span>
                 <span className="text-lg font-black text-white">{formatRupiah(totalPaidNominal)}</span>
               </div>
               <div className="p-2.5 bg-yellow-400 text-emerald-950 rounded-xl font-black shadow-sm">
@@ -713,7 +713,7 @@ export default function SiswaDashboard({ currentProfile, payments, daftarUlangPa
 
             <div className="space-y-1.5">
               <div className="flex justify-between text-[11px] text-slate-600 font-bold">
-                <span>Rasio Kepatuhan SPP</span>
+                <span>Rasio Kepatuhan Pembayaran</span>
                 <span className="text-emerald-700">{Math.round((lunasCount / 12) * 100)}%</span>
               </div>
               <div className="w-full bg-slate-100 rounded-full h-2.5 border border-emerald-100 overflow-hidden">
@@ -733,10 +733,10 @@ export default function SiswaDashboard({ currentProfile, payments, daftarUlangPa
         <div className="p-6 pb-4 border-b border-emerald-100 flex flex-col sm:flex-row sm:justify-between sm:items-center gap-3">
           <div>
             <h3 className="font-extrabold text-slate-900 text-sm">
-              Riwayat Pembayaran &amp; Matriks SPP 12 Bulan
+              Riwayat Pembayaran &amp; Matriks 12 Bulan
             </h3>
             <p className="text-xs text-slate-500 mt-0.5">
-              Daftar rinci status setoran SPP siswa per bulan dari bulan Juli s/d Juni untuk tahun ajaran aktif.
+              Daftar rinci status setoran siswa per bulan dari bulan Juli s/d Juni untuk tahun ajaran aktif.
             </p>
           </div>
           
@@ -763,7 +763,7 @@ export default function SiswaDashboard({ currentProfile, payments, daftarUlangPa
               <tr className="bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-950 text-yellow-300 font-black text-[10px] uppercase tracking-wider sticky top-0">
                 <th className="py-4 px-6">Bulan</th>
                 <th className="py-4 px-6">Tahun Ajaran</th>
-                <th className="py-4 px-6">Nominal SPP</th>
+                <th className="py-4 px-6">Nominal Biaya</th>
                 <th className="py-4 px-6 text-center">Status</th>
                 <th className="py-4 px-6">Tanggal Pembayaran</th>
                 <th className="py-4 px-6">No. Bukti / Invoice</th>
