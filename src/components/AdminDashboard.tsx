@@ -6,8 +6,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { 
   Users, TrendingUp, AlertTriangle, Percent, Plus, Edit2, Trash2, Check, X, Download, FileSpreadsheet, FileText, Search, Calendar, LogOut, Database, ArrowRight, UserPlus, RefreshCw, Clock, Printer, ChevronRight, MessageCircle, Menu, Wallet, Copy
 } from 'lucide-react';
-import { Profile, SppPembayaran, BULAN_LIST, BulanType, JenjangType } from '../types';
-import { NOMINAL_SPP } from '../data/mockData';
+import { Profile, SppPembayaran, DaftarUlangPembayaran, BULAN_LIST, BulanType, JenjangType } from '../types';
+import { NOMINAL_SPP, NOMINAL_DAFTAR_ULANG } from '../data/mockData';
 import { supabase } from '../lib/supabase';
 const generateUUID = () => {
   if (typeof window !== 'undefined' && window.crypto && window.crypto.randomUUID) {
@@ -23,9 +23,11 @@ const generateUUID = () => {
 interface AdminDashboardProps {
   profiles: Profile[];
   payments: SppPembayaran[];
+  daftarUlangPayments: DaftarUlangPembayaran[];
   currentProfile: Profile;
   onUpdateProfiles: (updated: Profile[]) => void;
   onUpdatePayments: (updated: SppPembayaran[]) => void;
+  onUpdateDaftarUlang: (updated: DaftarUlangPembayaran[]) => void;
   onLogout: () => void;
   onOpenSQL: () => void;
 }
@@ -33,13 +35,15 @@ interface AdminDashboardProps {
 export default function AdminDashboard({
   profiles,
   payments: allPayments,
+  daftarUlangPayments: allDaftarUlang,
   currentProfile,
   onUpdateProfiles,
   onUpdatePayments,
+  onUpdateDaftarUlang,
   onLogout,
   onOpenSQL
 }: AdminDashboardProps) {
-  const [activeTab, setActiveTab] = useState<'ringkasan' | 'siswa' | 'pembayaran' | 'broadcast'>('ringkasan');
+  const [activeTab, setActiveTab] = useState<'ringkasan' | 'siswa' | 'pembayaran' | 'daftar_ulang' | 'broadcast'>('ringkasan');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   
   // Jenjang filtering based on user role or selection
@@ -106,6 +110,167 @@ Wassalamu'alaikum Wr. Wb.`
       : [...contactedSiswaIds, siswaId];
     setContactedSiswaIds(updated);
     localStorage.setItem('spp_broadcast_contacted', JSON.stringify(updated));
+  };
+
+  // Daftar Ulang States
+  const [daftarUlangSearch, setDaftarUlangSearch] = useState('');
+  const [daftarUlangKelas, setDaftarUlangKelas] = useState('Semua');
+  const [daftarUlangStatusFilter, setDaftarUlangStatusFilter] = useState<'Semua' | 'lunas' | 'cicilan' | 'belum_bayar'>('Semua');
+
+  const [isDaftarUlangModalOpen, setIsDaftarUlangModalOpen] = useState(false);
+  const [selectedDaftarUlangSiswa, setSelectedDaftarUlangSiswa] = useState<Profile | null>(null);
+  const [daftarUlangForm, setDaftarUlangForm] = useState({
+    terbayar: 0,
+    status: 'belum_bayar' as 'lunas' | 'cicilan' | 'belum_bayar',
+    keterangan: 'Seragam, Buku & Kegiatan Tahunan'
+  });
+
+  const daftarUlangRecords = allDaftarUlang.filter(du => siswaIds.has(du.siswa_id));
+
+  const totalDaftarUlangMasuk = daftarUlangRecords.reduce((sum, du) => sum + du.terbayar, 0);
+  const totalDaftarUlangTunggakan = daftarUlangRecords.reduce((sum, du) => sum + Math.max(0, du.nominal - du.terbayar), 0);
+  const totalDaftarUlangLunasCount = daftarUlangRecords.filter(du => du.status === 'lunas').length;
+  const percentageDaftarUlangLunas = siswaProfiles.length > 0 ? Math.round((totalDaftarUlangLunasCount / siswaProfiles.length) * 100) : 0;
+
+  const handleOpenDaftarUlangModal = (siswa: Profile) => {
+    setSelectedDaftarUlangSiswa(siswa);
+    const existing = allDaftarUlang.find(du => du.siswa_id === siswa.id && du.tahun_ajaran === '2025/2026');
+    setDaftarUlangForm({
+      terbayar: existing ? existing.terbayar : 0,
+      status: existing ? existing.status : 'belum_bayar',
+      keterangan: existing?.keterangan || 'Seragam, Buku & Kegiatan Tahunan'
+    });
+    setIsDaftarUlangModalOpen(true);
+  };
+
+  const handleSaveDaftarUlang = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedDaftarUlangSiswa) return;
+
+    const nominal = NOMINAL_DAFTAR_ULANG;
+    const terbayar = Number(daftarUlangForm.terbayar) || 0;
+    const status: 'lunas' | 'cicilan' | 'belum_bayar' = terbayar >= nominal ? 'lunas' : terbayar > 0 ? 'cicilan' : 'belum_bayar';
+    const tanggal_bayar = status !== 'belum_bayar' ? new Date().toISOString().split('T')[0] : null;
+    const invoice_no = status !== 'belum_bayar' ? `INV/DU/2526/${selectedDaftarUlangSiswa.nis}` : null;
+
+    const existingIdx = allDaftarUlang.findIndex(du => du.siswa_id === selectedDaftarUlangSiswa.id && du.tahun_ajaran === '2025/2026');
+    let updated: DaftarUlangPembayaran[];
+
+    if (existingIdx >= 0) {
+      updated = [...allDaftarUlang];
+      updated[existingIdx] = {
+        ...updated[existingIdx],
+        terbayar,
+        status,
+        tanggal_bayar,
+        invoice_no,
+        keterangan: daftarUlangForm.keterangan,
+        dicatat_oleh: currentProfile.id
+      };
+    } else {
+      const newRec: DaftarUlangPembayaran = {
+        id: generateUUID(),
+        siswa_id: selectedDaftarUlangSiswa.id,
+        tahun_ajaran: '2025/2026',
+        nominal,
+        terbayar,
+        tanggal_bayar,
+        status,
+        keterangan: daftarUlangForm.keterangan,
+        invoice_no,
+        dicatat_oleh: currentProfile.id
+      };
+      updated = [...allDaftarUlang, newRec];
+    }
+
+    onUpdateDaftarUlang(updated);
+    setIsDaftarUlangModalOpen(false);
+    triggerToast(`Biaya Daftar Ulang ${selectedDaftarUlangSiswa.nama} berhasil diperbarui!`);
+  };
+
+  const handlePrintDaftarUlangPDF = (siswa: Profile, record?: DaftarUlangPembayaran) => {
+    try {
+      const duRecord = record || allDaftarUlang.find(du => du.siswa_id === siswa.id) || {
+        id: 'du-temp',
+        siswa_id: siswa.id,
+        tahun_ajaran: '2025/2026',
+        nominal: NOMINAL_DAFTAR_ULANG,
+        terbayar: 0,
+        tanggal_bayar: null,
+        status: 'belum_bayar' as const,
+        invoice_no: `INV/DU/2526/${siswa.nis}`,
+        dicatat_oleh: null
+      };
+
+      const doc = new jsPDF();
+      doc.setFillColor(0, 168, 89);
+      doc.rect(0, 0, 210, 32, 'F');
+      
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(255, 230, 0);
+      doc.setFontSize(16);
+      doc.text('YAYASAN AL-BABUSSALAM', 14, 15);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(255, 255, 255);
+      doc.text('KUITANSI PEMBAYARAN DAFTAR ULANG TAHUNAN', 14, 23);
+
+      doc.setTextColor(30, 41, 59);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`No. Invoice: ${duRecord.invoice_no || 'INV/DU/2526/' + siswa.nis}`, 14, 42);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Tanggal: ${duRecord.tanggal_bayar || new Date().toLocaleDateString('id-ID')}`, 140, 42);
+
+      autoTable(doc, {
+        startY: 48,
+        head: [['IDENTITAS SISWA', 'RINCIAN UNIT & TA']],
+        body: [
+          [`Nama Siswa : ${siswa.nama}`, `Unit Sekolah : ${siswa.jenjang || 'Sekolah Babussalam'}`],
+          [`NIS        : ${siswa.nis}`, `Kelas        : ${siswa.kelas}`],
+          [`Email Wali : ${siswa.email}`, `Tahun Ajaran : ${duRecord.tahun_ajaran}`]
+        ],
+        theme: 'striped',
+        headStyles: { fillColor: [0, 168, 89], textColor: [255, 255, 255], fontStyle: 'bold' },
+        styles: { fontSize: 9 }
+      });
+
+      const sisa = Math.max(0, duRecord.nominal - duRecord.terbayar);
+
+      autoTable(doc, {
+        startY: (doc as any).lastAutoTable.finalY + 8,
+        head: [['KOMPONEN DAFTAR ULANG', 'BIAYA TAHUNAN', 'TERBAYAR', 'STATUS']],
+        body: [
+          [
+            duRecord.keterangan || 'Paket Seragam, Buku Modul, & Kegiatan Tahunan',
+            formatRupiah(duRecord.nominal),
+            formatRupiah(duRecord.terbayar),
+            duRecord.status.toUpperCase()
+          ],
+          [
+            'SISA TUNGGAKAN BIAYA DAFTAR ULANG',
+            '-',
+            formatRupiah(sisa),
+            sisa === 0 ? 'LUNAS' : 'BELUM LUNAS'
+          ]
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [15, 23, 42], textColor: [255, 230, 0], fontStyle: 'bold' },
+        styles: { fontSize: 9 }
+      });
+
+      const finalY = (doc as any).lastAutoTable.finalY + 20;
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Petugas Kasir / Bendahara Sekolah,', 135, finalY);
+      doc.text('( Yayasan Al-Babussalam )', 135, finalY + 25);
+
+      doc.save(`Kuitansi_Daftar_Ulang_${siswa.nis}.pdf`);
+      triggerToast(`Kuitansi Daftar Ulang ${siswa.nama} berhasil diunduh!`);
+    } catch (e) {
+      console.error(e);
+      triggerToast('Gagal mencetak kuitansi PDF', 'error');
+    }
   };
 
   const [selectedSiswaId, setSelectedSiswaId] = useState<string>(
@@ -773,6 +938,18 @@ Wassalamu'alaikum Wr. Wb.`
           </button>
 
           <button 
+            onClick={() => {setActiveTab('daftar_ulang'); setIsMobileMenuOpen(false);}} 
+            className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm rounded-2xl transition-all duration-200 cursor-pointer font-bold ${
+              activeTab === 'daftar_ulang' 
+                ? 'bg-gradient-to-r from-yellow-400 to-yellow-500 text-emerald-950 shadow-lg glow-yellow scale-[1.02]' 
+                : 'text-emerald-100 hover:bg-emerald-800/50 hover:text-yellow-300 font-semibold'
+            }`}
+          >
+            <RefreshCw className={`w-5 h-5 ${activeTab === 'daftar_ulang' ? 'text-emerald-950' : 'text-yellow-400'}`} /> 
+            Daftar Ulang Siswa
+          </button>
+
+          <button 
             onClick={() => {setActiveTab('broadcast'); setIsMobileMenuOpen(false);}} 
             className={`w-full flex items-center gap-3 px-4 py-3.5 text-sm rounded-2xl transition-all duration-200 cursor-pointer font-bold ${
               activeTab === 'broadcast' 
@@ -1083,6 +1260,188 @@ Wassalamu'alaikum Wr. Wb.`
                         );
                       })}
                     </AnimatePresence>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {activeTab === 'daftar_ulang' && (
+              <div className="space-y-5">
+                {/* Header Actions untuk Tab Daftar Ulang */}
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-gradient-to-r from-emerald-950 via-emerald-900 to-emerald-950 p-6 rounded-3xl border border-yellow-500/30 shadow-xl relative overflow-hidden shrink-0">
+                  <div className="absolute -top-10 -right-10 w-32 h-32 bg-yellow-400/10 rounded-full blur-2xl pointer-events-none"></div>
+                  <div className="relative z-10 space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="bg-yellow-400 text-emerald-950 text-[10px] font-black px-2.5 py-0.5 rounded-full uppercase tracking-wider">Tahun Ajaran 2025/2026</span>
+                    </div>
+                    <h2 className="font-black text-white text-lg tracking-tight">Manajemen Biaya Daftar Ulang Tahunan</h2>
+                    <p className="text-xs text-emerald-200/80 font-medium">Kelola setoran re-registrasi, cicilan buku, seragam, dan kegiatan tahunan siswa.</p>
+                  </div>
+                </div>
+
+                {/* Stat Cards Daftar Ulang */}
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-5 shrink-0">
+                  <div className="bg-white border border-emerald-200 p-5 rounded-3xl shadow-sm space-y-2">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Total Terbayar (Kas Masuk)</span>
+                    <h3 className="text-2xl font-black text-emerald-700">{formatRupiah(totalDaftarUlangMasuk)}</h3>
+                    <p className="text-[10px] text-slate-500">Hasil akumulasi pelunasan &amp; cicilan siswa</p>
+                  </div>
+
+                  <div className="bg-white border border-amber-200 p-5 rounded-3xl shadow-sm space-y-2">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Total Sisa Tunggakan</span>
+                    <h3 className="text-2xl font-black text-amber-700">{formatRupiah(totalDaftarUlangTunggakan)}</h3>
+                    <p className="text-[10px] text-slate-500">Nominal sisa yang belum dilunasi</p>
+                  </div>
+
+                  <div className="bg-white border border-emerald-200 p-5 rounded-3xl shadow-sm space-y-2">
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block">Tingkat Pelunasan</span>
+                    <h3 className="text-2xl font-black text-emerald-900">{percentageDaftarUlangLunas}% <span className="text-xs font-normal text-slate-500">({totalDaftarUlangLunasCount}/{siswaProfiles.length} Siswa)</span></h3>
+                    <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                      <div className="bg-emerald-600 h-full rounded-full transition-all duration-500" style={{ width: `${percentageDaftarUlangLunas}%` }}></div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Table & Filters Container */}
+                <div className="bg-white/90 backdrop-blur-md rounded-3xl border border-emerald-500/20 shadow-xl overflow-hidden">
+                  <div className="p-4 bg-slate-50 border-b border-slate-200 flex flex-col sm:flex-row gap-3">
+                    <div className="relative flex-1">
+                      <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                      <input 
+                        type="text" 
+                        value={daftarUlangSearch} 
+                        onChange={(e) => setDaftarUlangSearch(e.target.value)} 
+                        placeholder="Cari Nama / NIS Siswa..." 
+                        className="w-full bg-white border border-slate-200 rounded-xl py-2 pl-9 pr-4 text-xs font-semibold" 
+                      />
+                    </div>
+                    <select 
+                      value={daftarUlangKelas} 
+                      onChange={(e) => setDaftarUlangKelas(e.target.value)} 
+                      className="bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold w-full sm:w-44"
+                    >
+                      {classesList.map(kelas => <option key={kelas} value={kelas}>{kelas === 'Semua' ? 'Semua Kelas' : `Kelas ${kelas}`}</option>)}
+                    </select>
+                    <select 
+                      value={daftarUlangStatusFilter} 
+                      onChange={(e) => setDaftarUlangStatusFilter(e.target.value as any)} 
+                      className="bg-white border border-slate-200 rounded-xl py-2 px-3 text-xs font-semibold w-full sm:w-44"
+                    >
+                      <option value="Semua">Semua Status</option>
+                      <option value="lunas">Lunas</option>
+                      <option value="cicilan">Cicilan</option>
+                      <option value="belum_bayar">Belum Bayar</option>
+                    </select>
+                  </div>
+
+                  <div className="overflow-x-auto max-h-[calc(100vh-320px)] overflow-y-auto">
+                    <table className="w-full text-left">
+                      <thead className="sticky top-0 bg-slate-50 z-10 shadow-xs border-b border-slate-200">
+                        <tr className="text-[10px] text-slate-500 uppercase tracking-wider font-extrabold">
+                          <th className="py-3 px-4">Nama Siswa &amp; NIS</th>
+                          <th className="py-3 px-4">Kelas / Unit</th>
+                          <th className="py-3 px-4">Nominal Biaya</th>
+                          <th className="py-3 px-4">Terbayar</th>
+                          <th className="py-3 px-4">Status &amp; Progress</th>
+                          <th className="py-3 px-4 text-center">Aksi</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-xs font-medium">
+                        {(() => {
+                          const filtered = siswaProfiles.filter(siswa => {
+                            const matchesSearch = siswa.nama.toLowerCase().includes(daftarUlangSearch.toLowerCase()) || siswa.nis.includes(daftarUlangSearch);
+                            const matchesKelas = daftarUlangKelas === 'Semua' || siswa.kelas === daftarUlangKelas;
+                            const duRec = allDaftarUlang.find(du => du.siswa_id === siswa.id);
+                            const status = duRec ? duRec.status : 'belum_bayar';
+                            const matchesStatus = daftarUlangStatusFilter === 'Semua' || status === daftarUlangStatusFilter;
+                            return matchesSearch && matchesKelas && matchesStatus;
+                          });
+
+                          if (filtered.length === 0) {
+                            return (
+                              <tr>
+                                <td colSpan={6} className="text-center py-12 text-slate-400 text-xs">
+                                  Tidak ada data daftar ulang yang cocok dengan kriteria pencarian.
+                                </td>
+                              </tr>
+                            );
+                          }
+
+                          return filtered.map(siswa => {
+                            const duRec = allDaftarUlang.find(du => du.siswa_id === siswa.id) || {
+                              id: 'none',
+                              siswa_id: siswa.id,
+                              tahun_ajaran: '2025/2026',
+                              nominal: NOMINAL_DAFTAR_ULANG,
+                              terbayar: 0,
+                              tanggal_bayar: null,
+                              status: 'belum_bayar' as const,
+                              invoice_no: null,
+                              dicatat_oleh: null
+                            };
+
+                            const pct = Math.min(100, Math.round((duRec.terbayar / duRec.nominal) * 100));
+
+                            return (
+                              <tr key={siswa.id} className="hover:bg-slate-50/70 transition">
+                                <td className="py-3.5 px-4 font-bold text-slate-800">
+                                  <span className="block">{siswa.nama}</span>
+                                  <span className="text-[10px] text-slate-400 font-mono">NIS: {siswa.nis}</span>
+                                </td>
+                                <td className="py-3.5 px-4">
+                                  <span className="font-bold text-slate-700">{siswa.kelas}</span>
+                                  <span className="text-[10px] text-emerald-700 block font-semibold">{siswa.jenjang || 'SD/SMP/SMA'}</span>
+                                </td>
+                                <td className="py-3.5 px-4 font-bold text-slate-800">
+                                  {formatRupiah(duRec.nominal)}
+                                </td>
+                                <td className="py-3.5 px-4 font-extrabold text-emerald-700">
+                                  {formatRupiah(duRec.terbayar)}
+                                </td>
+                                <td className="py-3.5 px-4 space-y-1">
+                                  <div className="flex items-center gap-2">
+                                    <span className={`px-2 py-0.5 rounded-md text-[9px] font-black uppercase ${
+                                      duRec.status === 'lunas' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
+                                      duRec.status === 'cicilan' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
+                                      'bg-rose-100 text-rose-800 border border-rose-300'
+                                    }`}>
+                                      {duRec.status.replace('_', ' ')}
+                                    </span>
+                                    <span className="text-[10px] font-bold text-slate-500">{pct}%</span>
+                                  </div>
+                                  <div className="w-28 bg-slate-100 h-1.5 rounded-full overflow-hidden">
+                                    <div 
+                                      className={`h-full rounded-full transition-all ${
+                                        duRec.status === 'lunas' ? 'bg-emerald-600' : duRec.status === 'cicilan' ? 'bg-amber-500' : 'bg-rose-500'
+                                      }`} 
+                                      style={{ width: `${pct}%` }}
+                                    ></div>
+                                  </div>
+                                </td>
+                                <td className="py-3.5 px-4 text-center">
+                                  <div className="flex justify-center gap-1.5">
+                                    <button 
+                                      onClick={() => handleOpenDaftarUlangModal(siswa)}
+                                      className="flex items-center gap-1 bg-emerald-600 hover:bg-emerald-700 text-white px-2.5 py-1.5 rounded-lg text-[10px] font-bold transition cursor-pointer"
+                                      title="Catat Setoran / Cicilan"
+                                    >
+                                      <Wallet className="w-3 h-3" /> Setor
+                                    </button>
+                                    <button 
+                                      onClick={() => handlePrintDaftarUlangPDF(siswa, duRec)}
+                                      className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition cursor-pointer"
+                                      title="Cetak Kuitansi PDF"
+                                    >
+                                      <Printer className="w-3.5 h-3.5" />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          });
+                        })()}
+                      </tbody>
+                    </table>
                   </div>
                 </div>
               </div>
@@ -1623,6 +1982,83 @@ Wassalamu'alaikum Wr. Wb.`
                   </button>
                 )}
               </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* DAFTAR ULANG PAYMENT MODAL */}
+      <AnimatePresence>
+        {isDaftarUlangModalOpen && selectedDaftarUlangSiswa && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-slate-900/50 backdrop-blur-sm flex items-center justify-center p-4 z-50"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="bg-white rounded-2xl max-w-md w-full overflow-hidden shadow-2xl"
+            >
+              <div className="bg-gradient-to-r from-emerald-900 to-emerald-950 text-white p-4 flex justify-between items-center">
+                <div>
+                  <h3 className="font-bold text-sm">Catat Pembayaran Daftar Ulang</h3>
+                  <p className="text-[10px] text-emerald-200">{selectedDaftarUlangSiswa.nama} ({selectedDaftarUlangSiswa.kelas})</p>
+                </div>
+                <button onClick={() => setIsDaftarUlangModalOpen(false)} className="text-white/70 hover:text-white p-1 rounded"><X className="w-4 h-4" /></button>
+              </div>
+              <form onSubmit={handleSaveDaftarUlang} className="p-6 space-y-4">
+                <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl space-y-1">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase block">Total Nominal Biaya Daftar Ulang (Tahunan)</span>
+                  <span className="text-lg font-black text-emerald-800">{formatRupiah(NOMINAL_DAFTAR_ULANG)}</span>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Jumlah Terbayar (Rp)</label>
+                  <input 
+                    type="number" 
+                    value={daftarUlangForm.terbayar} 
+                    onChange={(e) => setDaftarUlangForm({ ...daftarUlangForm, terbayar: Number(e.target.value) })}
+                    className="w-full border border-slate-300 rounded-xl py-2.5 px-3 text-sm font-bold text-slate-800 focus:ring-2 focus:ring-emerald-500"
+                    placeholder="Masukkan jumlah yang dibayarkan..."
+                    required
+                  />
+                  <div className="flex gap-2 pt-1">
+                    <button 
+                      type="button" 
+                      onClick={() => setDaftarUlangForm({ ...daftarUlangForm, terbayar: NOMINAL_DAFTAR_ULANG })} 
+                      className="text-[10px] font-extrabold text-emerald-700 bg-emerald-100 hover:bg-emerald-200 px-2 py-1 rounded cursor-pointer"
+                    >
+                      Bayar Lunas (Rp 1.500.000)
+                    </button>
+                    <button 
+                      type="button" 
+                      onClick={() => setDaftarUlangForm({ ...daftarUlangForm, terbayar: 750000 })} 
+                      className="text-[10px] font-extrabold text-amber-700 bg-amber-100 hover:bg-amber-200 px-2 py-1 rounded cursor-pointer"
+                    >
+                      Cicilan 50% (Rp 750.000)
+                    </button>
+                  </div>
+                </div>
+
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-700">Keterangan Paket / Kelengkapan</label>
+                  <input 
+                    type="text" 
+                    value={daftarUlangForm.keterangan} 
+                    onChange={(e) => setDaftarUlangForm({ ...daftarUlangForm, keterangan: e.target.value })}
+                    className="w-full border border-slate-300 rounded-xl py-2 px-3 text-xs"
+                    placeholder="Contoh: Seragam, Buku Modul, & Kegiatan"
+                  />
+                </div>
+
+                <div className="pt-4 flex justify-end gap-2 border-t mt-4">
+                  <button type="button" onClick={() => setIsDaftarUlangModalOpen(false)} className="bg-slate-100 hover:bg-slate-200 px-4 py-2 rounded-xl text-xs font-bold cursor-pointer">Batal</button>
+                  <button type="submit" className="bg-emerald-600 hover:bg-emerald-700 text-white px-5 py-2 rounded-xl text-xs font-bold cursor-pointer shadow-md">Simpan Setoran</button>
+                </div>
+              </form>
             </motion.div>
           </motion.div>
         )}

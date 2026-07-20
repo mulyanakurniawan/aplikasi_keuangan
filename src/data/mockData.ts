@@ -1,4 +1,4 @@
-import { Profile, SppPembayaran, BULAN_LIST } from '../types';
+import { Profile, SppPembayaran, DaftarUlangPembayaran, BULAN_LIST } from '../types';
 
 export const INITIAL_PROFILES: Profile[] = [
   {
@@ -112,6 +112,7 @@ export const INITIAL_PROFILES: Profile[] = [
 ];
 
 export const NOMINAL_SPP = 350000; // Rp 350.000 per bulan
+export const NOMINAL_DAFTAR_ULANG = 1500000; // Rp 1.500.000 per tahun ajaran
 
 // Generate SPP payments for the 2025/2026 Academic Year
 export function generateInitialPembayaran(profiles: Profile[]): SppPembayaran[] {
@@ -146,4 +147,32 @@ export function generateInitialPembayaran(profiles: Profile[]): SppPembayaran[] 
   });
 
   return pembayaran;
+}
+
+// Generate Daftar Ulang payments for the 2025/2026 Academic Year
+export function generateInitialDaftarUlang(profiles: Profile[]): DaftarUlangPembayaran[] {
+  const list: DaftarUlangPembayaran[] = [];
+  const siswaProfiles = profiles.filter(p => p.role === 'siswa');
+
+  siswaProfiles.forEach((siswa, idx) => {
+    const isLunas = idx % 3 === 0;
+    const isCicilan = idx % 3 === 1;
+    const terbayar = isLunas ? NOMINAL_DAFTAR_ULANG : isCicilan ? 750000 : 0;
+    const status: 'lunas' | 'cicilan' | 'belum_bayar' = isLunas ? 'lunas' : isCicilan ? 'cicilan' : 'belum_bayar';
+
+    list.push({
+      id: `du-${siswa.id}`,
+      siswa_id: siswa.id,
+      tahun_ajaran: '2025/2026',
+      nominal: NOMINAL_DAFTAR_ULANG,
+      terbayar: terbayar,
+      tanggal_bayar: isLunas || isCicilan ? '2025-07-05' : null,
+      status: status,
+      keterangan: 'Seragam, Buku & Kegiatan Tahunan',
+      invoice_no: status !== 'belum_bayar' ? `INV/DU/2526/${siswa.nis}` : null,
+      dicatat_oleh: status !== 'belum_bayar' ? 'admin-1' : null
+    });
+  });
+
+  return list;
 }

@@ -16,8 +16,8 @@ import {
   ChevronRight,
   Activity
 } from 'lucide-react';
-import { Profile, SppPembayaran, UserSession } from './types';
-import { INITIAL_PROFILES, generateInitialPembayaran } from './data/mockData';
+import { Profile, SppPembayaran, DaftarUlangPembayaran, UserSession } from './types';
+import { INITIAL_PROFILES, generateInitialPembayaran, generateInitialDaftarUlang } from './data/mockData';
 import AdminDashboard from './components/AdminDashboard';
 import SiswaDashboard from './components/SiswaDashboard';
 import { supabase } from './lib/supabase';
@@ -210,15 +210,26 @@ export default function App() {
     setPasswordInput('');
   };
 
+  const [daftarUlangPayments, setDaftarUlangPayments] = useState<DaftarUlangPembayaran[]>(() => {
+    const saved = localStorage.getItem('spp_daftar_ulang');
+    return saved ? JSON.parse(saved) : generateInitialDaftarUlang(INITIAL_PROFILES);
+  });
+
+  useEffect(() => {
+    localStorage.setItem('spp_daftar_ulang', JSON.stringify(daftarUlangPayments));
+  }, [daftarUlangPayments]);
+
   // Reset demo states to fresh database
   const handleResetDemoState = () => {
     if (confirm("Apakah Anda ingin mereset seluruh data kembali ke kondisi default (pabrikan)? Seluruh pembayaran tambahan yang Anda catat akan dihapus.")) {
       localStorage.removeItem('spp_profiles');
       localStorage.removeItem('spp_payments');
+      localStorage.removeItem('spp_daftar_ulang');
       localStorage.removeItem('spp_session');
       localStorage.removeItem('spp_path');
       setProfiles(INITIAL_PROFILES);
       setPayments(generateInitialPembayaran(INITIAL_PROFILES));
+      setDaftarUlangPayments(generateInitialDaftarUlang(INITIAL_PROFILES));
       setSession({ user: null });
       setCurrentPath('/login');
       setEmailInput('');
@@ -249,9 +260,11 @@ export default function App() {
       <AdminDashboard
         profiles={profiles}
         payments={payments}
+        daftarUlangPayments={daftarUlangPayments}
         currentProfile={currentAdminProfile}
         onUpdateProfiles={setProfiles}
         onUpdatePayments={setPayments}
+        onUpdateDaftarUlang={setDaftarUlangPayments}
         onLogout={handleLogout}
         onOpenSQL={() => fetchSupabaseData(true)}
       />
@@ -440,6 +453,7 @@ export default function App() {
             <SiswaDashboard
               currentProfile={profiles.find(p => p.id === session.user?.id) || profiles.find(p => p.role === 'siswa') || { id: 'fallback', nama: 'Siswa', nis: '-', kelas: '-', role: 'siswa', email: 'siswa@school.com' }}
               payments={payments}
+              daftarUlangPayments={daftarUlangPayments}
               onLogout={handleLogout}
               onOpenSQL={() => {}}
             />

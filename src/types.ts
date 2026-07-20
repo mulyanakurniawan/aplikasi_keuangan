@@ -40,3 +40,16 @@ export const BULAN_LIST = [
 ] as const;
 
 export type BulanType = typeof BULAN_LIST[number];
+
+export interface DaftarUlangPembayaran {
+  id: string;
+  siswa_id: string;
+  tahun_ajaran: string;
+  nominal: number;
+  terbayar: number;
+  tanggal_bayar: string | null;
+  status: 'lunas' | 'cicilan' | 'belum_bayar';
+  keterangan?: string;
+  invoice_no: string | null;
+  dicatat_oleh: string | null;
+}

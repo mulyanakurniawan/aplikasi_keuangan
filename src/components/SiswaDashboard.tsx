@@ -14,17 +14,19 @@ import {
   QrCode,
   Info
 } from 'lucide-react';
-import { Profile, SppPembayaran, BULAN_LIST } from '../types';
-import { NOMINAL_SPP } from '../data/mockData';
+import autoTable from 'jspdf-autotable';
+import { Profile, SppPembayaran, DaftarUlangPembayaran, BULAN_LIST } from '../types';
+import { NOMINAL_SPP, NOMINAL_DAFTAR_ULANG } from '../data/mockData';
 
 interface SiswaDashboardProps {
   currentProfile: Profile;
   payments: SppPembayaran[];
+  daftarUlangPayments: DaftarUlangPembayaran[];
   onLogout: () => void;
   onOpenSQL: () => void;
 }
 
-export default function SiswaDashboard({ currentProfile, payments, onLogout, onOpenSQL }: SiswaDashboardProps) {
+export default function SiswaDashboard({ currentProfile, payments, daftarUlangPayments, onLogout, onOpenSQL }: SiswaDashboardProps) {
   const [selectedYear, setSelectedYear] = useState('2025/2026');
   const [currentSystemMonth, setCurrentSystemMonth] = useState('Juni'); // Defaulting to June for academic demo
 
@@ -32,6 +34,91 @@ export default function SiswaDashboard({ currentProfile, payments, onLogout, onO
   const studentPayments = payments.filter(
     p => p.siswa_id === currentProfile.id && p.tahun_ajaran === selectedYear
   );
+
+  const myDaftarUlang = (daftarUlangPayments || []).find(d => d.siswa_id === currentProfile.id && d.tahun_ajaran === selectedYear) || {
+    id: 'du-temp',
+    siswa_id: currentProfile.id,
+    tahun_ajaran: selectedYear,
+    nominal: NOMINAL_DAFTAR_ULANG,
+    terbayar: 0,
+    tanggal_bayar: null,
+    status: 'belum_bayar' as const,
+    keterangan: 'Paket Seragam, Buku Modul, & Kegiatan Tahunan',
+    invoice_no: `INV/DU/2526/${currentProfile.nis}`,
+    dicatat_oleh: null
+  };
+
+  const handlePrintDaftarUlangReceipt = () => {
+    try {
+      const doc = new jsPDF();
+      doc.setFillColor(0, 168, 89);
+      doc.rect(0, 0, 210, 32, 'F');
+      
+      doc.setFont('helvetica', 'bold');
+      doc.setTextColor(255, 230, 0);
+      doc.setFontSize(16);
+      doc.text('YAYASAN AL-BABUSSALAM', 14, 15);
+      
+      doc.setFontSize(10);
+      doc.setTextColor(255, 255, 255);
+      doc.text('KUITANSI RESMI BUKTI PEMBAYARAN DAFTAR ULANG TAHUNAN', 14, 23);
+
+      doc.setTextColor(30, 41, 59);
+      doc.setFontSize(10);
+      doc.setFont('helvetica', 'bold');
+      doc.text(`No. Invoice: ${myDaftarUlang.invoice_no || 'INV/DU/2526/' + currentProfile.nis}`, 14, 42);
+      doc.setFont('helvetica', 'normal');
+      doc.text(`Tanggal: ${myDaftarUlang.tanggal_bayar || new Date().toLocaleDateString('id-ID')}`, 140, 42);
+
+      autoTable(doc, {
+        startY: 48,
+        head: [['IDENTITAS SISWA', 'RINCIAN AKADEMIK']],
+        body: [
+          [`Nama Siswa : ${currentProfile.nama}`, `Unit Sekolah : ${currentProfile.jenjang || 'Sekolah Babussalam'}`],
+          [`NIS        : ${currentProfile.nis}`, `Kelas        : ${currentProfile.kelas}`],
+          [`Email Wali : ${currentProfile.email}`, `Tahun Ajaran : ${myDaftarUlang.tahun_ajaran}`]
+        ],
+        theme: 'striped',
+        headStyles: { fillColor: [0, 168, 89], textColor: [255, 255, 255], fontStyle: 'bold' },
+        styles: { fontSize: 9 }
+      });
+
+      const sisa = Math.max(0, myDaftarUlang.nominal - myDaftarUlang.terbayar);
+
+      autoTable(doc, {
+        startY: (doc as any).lastAutoTable.finalY + 8,
+        head: [['KOMPONEN DAFTAR ULANG', 'BIAYA TAHUNAN', 'TERBAYAR', 'STATUS']],
+        body: [
+          [
+            myDaftarUlang.keterangan || 'Paket Seragam, Buku Modul, & Kegiatan Tahunan',
+            formatRupiah(myDaftarUlang.nominal),
+            formatRupiah(myDaftarUlang.terbayar),
+            myDaftarUlang.status.toUpperCase()
+          ],
+          [
+            'SISA TUNGGAKAN BIAYA DAFTAR ULANG',
+            '-',
+            formatRupiah(sisa),
+            sisa === 0 ? 'LUNAS' : 'BELUM LUNAS'
+          ]
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [15, 23, 42], textColor: [255, 230, 0], fontStyle: 'bold' },
+        styles: { fontSize: 9 }
+      });
+
+      const finalY = (doc as any).lastAutoTable.finalY + 20;
+      doc.setFontSize(9);
+      doc.setFont('helvetica', 'bold');
+      doc.text('Bagian Keuangan Sekolah,', 135, finalY);
+      doc.text('( Yayasan Al-Babussalam )', 135, finalY + 25);
+
+      doc.save(`Kuitansi_Daftar_Ulang_${currentProfile.nis}.pdf`);
+    } catch (e) {
+      console.error(e);
+      alert('Gagal mencetak kuitansi PDF');
+    }
+  };
 
   // Get current month's status
   const currentMonthPayment = studentPayments.find(p => p.bulan === currentSystemMonth);
@@ -444,6 +531,59 @@ export default function SiswaDashboard({ currentProfile, payments, onLogout, onO
         <p className="text-[10px] text-slate-500 font-medium">
           * Bar indikator di atas menunjukkan kemajuan pembayaran SPP bulanan siswa untuk tahun ajaran aktif. Total SPP terbayar: <strong className="text-emerald-700 font-bold">{formatRupiah(totalPaidNominal)}</strong>.
         </p>
+      </div>
+
+      {/* DAFTAR ULANG TAHUNAN CARD */}
+      <div className="bg-white/90 backdrop-blur-md rounded-3xl border border-emerald-500/20 shadow-xl p-6 space-y-4">
+        <div className="flex justify-between items-center pb-3 border-b border-emerald-100">
+          <div className="flex items-center gap-2">
+            <span className="p-2 bg-emerald-100 text-emerald-800 rounded-xl font-bold">
+              <Shield className="w-4 h-4" />
+            </span>
+            <div>
+              <h3 className="font-extrabold text-slate-900 text-sm">Status Biaya Daftar Ulang Tahunan ({selectedYear})</h3>
+              <p className="text-[10px] text-slate-500">Paket Seragam, Buku Modul Pembelajaran, &amp; Kegiatan Tahunan</p>
+            </div>
+          </div>
+          <span className={`px-3 py-1 rounded-full text-xs font-black uppercase tracking-wider ${
+            myDaftarUlang.status === 'lunas' ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' :
+            myDaftarUlang.status === 'cicilan' ? 'bg-amber-100 text-amber-800 border border-amber-300' :
+            'bg-rose-100 text-rose-800 border border-rose-300'
+          }`}>
+            {myDaftarUlang.status.replace('_', ' ')}
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="p-4 bg-slate-50 border border-slate-200/70 rounded-2xl space-y-1">
+            <span className="text-[10px] font-bold text-slate-400 uppercase block">Total Nominal Biaya</span>
+            <span className="text-base font-black text-slate-800">{formatRupiah(myDaftarUlang.nominal)}</span>
+          </div>
+
+          <div className="p-4 bg-emerald-50/60 border border-emerald-200/70 rounded-2xl space-y-1">
+            <span className="text-[10px] font-bold text-emerald-700 uppercase block">Jumlah Terbayar</span>
+            <span className="text-base font-black text-emerald-800">{formatRupiah(myDaftarUlang.terbayar)}</span>
+          </div>
+
+          <div className="p-4 bg-amber-50/60 border border-amber-200/70 rounded-2xl space-y-1">
+            <span className="text-[10px] font-bold text-amber-700 uppercase block">Sisa Tagihan</span>
+            <span className="text-base font-black text-amber-800">{formatRupiah(Math.max(0, myDaftarUlang.nominal - myDaftarUlang.terbayar))}</span>
+          </div>
+        </div>
+
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 pt-2">
+          <p className="text-[10px] text-slate-500">
+            * Keterangan: {myDaftarUlang.keterangan || 'Paket Seragam, Buku Modul, & Kegiatan Tahunan'}
+          </p>
+
+          <button
+            onClick={handlePrintDaftarUlangReceipt}
+            className="flex items-center gap-1.5 bg-gradient-to-r from-emerald-600 to-emerald-700 hover:from-emerald-700 hover:to-emerald-800 text-white text-xs px-4 py-2 rounded-xl font-extrabold transition shadow-md cursor-pointer"
+          >
+            <Printer className="w-3.5 h-3.5" />
+            Cetak Kuitansi Daftar Ulang
+          </button>
+        </div>
       </div>
 
       {/* Main Grid: Status Card (Large Left) and Details Summary (Right) */}
