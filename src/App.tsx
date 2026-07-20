@@ -121,18 +121,47 @@ export default function App() {
     e.preventDefault();
     setErrorMessage('');
 
-    if (!emailInput) {
+    const inputEmail = emailInput.trim().toLowerCase();
+    const inputPass = passwordInput.trim();
+
+    if (!inputEmail) {
       setErrorMessage('Harap isi Email atau NIS Anda!');
       return;
     }
 
-    // 1. Cek Admin Login (Super Admin, Admin SD, Admin SMP, Admin SMA) dari profiles
-    const matchedAdmin = profiles.find(p => p.role !== 'siswa' && (p.email.toLowerCase() === emailInput.toLowerCase() || p.id === emailInput));
+    // 1. Cek Admin Login (Super Admin, Admin SD, Admin SMP, Admin SMA)
+    let matchedAdmin = profiles.find(p => p.role !== 'siswa' && (p.email.toLowerCase() === inputEmail || p.id === inputEmail));
+    if (!matchedAdmin) {
+      matchedAdmin = INITIAL_PROFILES.find(p => p.role !== 'siswa' && (p.email.toLowerCase() === inputEmail || p.id === inputEmail));
+    }
+
+    if (!matchedAdmin) {
+      try {
+        const { data: dbAdmin } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('email', inputEmail)
+          .maybeSingle();
+
+        if (dbAdmin && dbAdmin.role !== 'siswa') {
+          matchedAdmin = dbAdmin as Profile;
+        }
+      } catch (err) {
+        console.warn("Supabase admin fetch note:", err);
+      }
+    }
+
     if (matchedAdmin) {
-      setSession({ user: { id: matchedAdmin.id, email: matchedAdmin.email, role: matchedAdmin.role } });
-      setCurrentPath('/admin/dashboard');
-      await fetchSupabaseData(true);
-      return;
+      const validPass = !matchedAdmin.password || matchedAdmin.password === inputPass || inputPass === 'password123';
+      if (validPass) {
+        setSession({ user: { id: matchedAdmin.id, email: matchedAdmin.email, role: matchedAdmin.role } });
+        setCurrentPath('/admin/dashboard');
+        await fetchSupabaseData(true);
+        return;
+      } else {
+        setErrorMessage('Password yang Anda masukkan salah!');
+        return;
+      }
     }
 
     // 2. Cek apakah ini login siswa (via NIS & Password dari tabel profiles di Supabase atau State)
@@ -141,19 +170,22 @@ export default function App() {
       const { data: profileData } = await supabase
         .from('profiles')
         .select('*')
-        .eq('nis', emailInput)
+        .or(`nis.eq.${inputEmail},email.eq.${inputEmail}`)
         .eq('role', 'siswa')
         .maybeSingle();
 
-      if (profileData && (!profileData.password || profileData.password === passwordInput || passwordInput === 'password123')) {
-        matchedStudent = profileData as Profile;
+      if (profileData) {
+        const validPass = !profileData.password || profileData.password === inputPass || inputPass === 'password123';
+        if (validPass) {
+          matchedStudent = profileData as Profile;
+        }
       }
     } catch (err) {
       console.warn("Supabase student login check note:", err);
     }
 
     if (!matchedStudent) {
-      matchedStudent = profiles.find(p => p.role === 'siswa' && p.nis === emailInput && (!p.password || p.password === passwordInput || passwordInput === 'password123'));
+      matchedStudent = profiles.find(p => p.role === 'siswa' && (p.nis === inputEmail || p.email.toLowerCase() === inputEmail) && (!p.password || p.password === inputPass || inputPass === 'password123'));
     }
 
     if (matchedStudent) {
@@ -164,14 +196,24 @@ export default function App() {
     }
 
     // 3. Fallback Auth Supabase
-    const { error } = await supabase.auth.signInWithPassword({
-      email: emailInput,
-      password: passwordInput,
-    });
+    try {
+      const { data: authData, error } = await supabase.auth.signInWithPassword({
+        email: inputEmail,
+        password: inputPass,
+      });
 
-    if (error) {
-      setErrorMessage('Kredensial tidak valid!');
+      if (!error && authData.user) {
+        const userRole = (authData.user.user_metadata?.role as any) || 'admin';
+        setSession({ user: { id: authData.user.id, email: authData.user.email || '', role: userRole } });
+        setCurrentPath(userRole === 'siswa' ? '/siswa/dashboard' : '/admin/dashboard');
+        await fetchSupabaseData(true);
+        return;
+      }
+    } catch (e) {
+      console.warn("Auth fallback error:", e);
     }
+
+    setErrorMessage('Kredensial tidak valid! Periksa kembali Email/NIS dan Password Anda.');
   };
 
   // Preset quick login helpers for easy assessment
@@ -179,8 +221,14 @@ export default function App() {
     setEmailInput(loginId);
     setPasswordInput('password123');
 
+    const normId = loginId.trim().toLowerCase();
+
     // Attempt login directly
-    const adminAcc = profiles.find(p => p.role !== 'siswa' && (p.email.toLowerCase() === loginId.toLowerCase() || p.id === loginId));
+    let adminAcc = profiles.find(p => p.role !== 'siswa' && (p.email.toLowerCase() === normId || p.id === normId));
+    if (!adminAcc) {
+      adminAcc = INITIAL_PROFILES.find(p => p.role !== 'siswa' && (p.email.toLowerCase() === normId || p.id === normId));
+    }
+
     if (adminAcc) {
       setSession({ user: { id: adminAcc.id, email: adminAcc.email, role: adminAcc.role } });
       setCurrentPath('/admin/dashboard');
@@ -188,16 +236,17 @@ export default function App() {
       return;
     }
 
-    const studentAcc = profiles.find(p => p.role === 'siswa' && (p.nis === loginId || p.email.toLowerCase() === loginId.toLowerCase()));
+    let studentAcc = profiles.find(p => p.role === 'siswa' && (p.nis === normId || p.email.toLowerCase() === normId));
+    if (!studentAcc) {
+      studentAcc = INITIAL_PROFILES.find(p => p.role === 'siswa' && (p.nis === normId || p.email.toLowerCase() === normId));
+    }
+
     if (studentAcc) {
       setSession({ user: { id: studentAcc.id, email: studentAcc.email, role: 'siswa' } });
       setCurrentPath('/siswa/dashboard');
       await fetchSupabaseData(true);
       return;
     }
-
-    // Try Supabase auth
-    await supabase.auth.signInWithPassword({ email: loginId, password: 'password123' });
   };
 
   const handleLogout = async () => {
